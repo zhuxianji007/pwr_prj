@@ -26,8 +26,8 @@ module rwc_reg #(
     input  logic [AW-1: 0] i_addr			       ,
     input  logic [DW-1: 0] i_wdata	         ,
     output logic [DW-1: 0] o_rdata	         ,
-    input  logic           i_lgc_wen         ,
-    input  logic [DW-1: 0] i_lgc_data        ,
+    input  logic [DW-1: 0]          i_lgc_wen         ,
+    input  logic [DW-1: 0] i_lgc_wdata        ,
     input  logic           i_clk	           ,
     input  logic           i_rst_n
  );
@@ -48,18 +48,19 @@ logic [DW-1: 0] reg_data;
 assign hit = (i_addr==REG_ADDR);
 assign wen = i_wen & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_WR) | (i_cfg_mode_status & SUPPORT_CFG_MODE_WR));
 assign ren = i_ren & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
-   
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-  if(~i_rst_n) begin
-    reg_data <= DEFAULT_VAL;
+  
+generate
+	for(genvar i=0; i<DW; i=i+1) begin: REG_DATA_BLK
+		always_ff@(posedge i_clk or negedge i_rst_n) begin
+  			if(~i_rst_n) begin
+				reg_data[i] <= DEFAULT_VAL[i];
+			end
+  			else begin
+				reg_data[i] <= (i_lgc_wen[i] & i_lgc_wdata[i]) ? 1'b1 : ((wen & i_wdata[i]) ? 1'b0 : reg_data[i]);
+			end
+		end
 	end
-  else if(i_lgc_wen) begin
-    reg_data <= i_lgc_wdata | reg_data;
-	end
-  else if(wen) begin
-    reg_data <= ~i_wdata & reg_data; //write 1 to clear.
-  end
-end
+endgenerate
     
 assign o_rdata = ren ? reg_data : {DW{1'b0}}; 
 
