@@ -37,10 +37,10 @@ logic hit;
 //==================================
 //main code
 //==================================
-assign ren = i_ren & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
 assign hit = (i_addr==REG_ADDR);
+assign ren = i_ren & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
    
-assign o_rdata = (ren & hit) ? i_ff_data : {{DW{1'b0}}}; 
+assign o_rdata = ren ? i_ff_data : {{DW{1'b0}}}; 
 
 // synopsys translate_off    
 //==================================
