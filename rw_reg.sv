@@ -49,7 +49,7 @@ assign wen = i_wen & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_WR) | (i_cfg
 assign ren = i_ren & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
   
 always_ff@(posedge i_clk or negedge i_rst_n) begin
-	if(i_rst_n) begin
+	if(~i_rst_n) begin
 		o_reg_odata <= DEFAULT_VAL;
 	end
 	else begin
