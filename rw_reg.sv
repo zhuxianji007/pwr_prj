@@ -22,12 +22,11 @@ module rw_reg #(
     input  logic           i_wen              ,
     input  logic           i_ren              ,
     input  logic           i_test_mode_status ,
-    input  logic           i_cfg_mode_status  ,
-	
-	input  logic [AW-1: 0] i_addr         ,
-	input  logic [DW-1: 0] i_wdata        ,
-    output logic [DW-1: 0] o_rdata	      ,
-    output logic [DW-1: 0] o_reg_odata        ,
+    input  logic           i_cfg_mode_status  ,	
+    input  logic [AW-1: 0] i_addr,
+    input  logic [DW-1: 0] i_wdata,
+    output logic [DW-1: 0] o_rdata,
+    output logic [DW-1: 0] o_reg_odata,
 	
     input  logic           i_clk	      ,
     input  logic           i_rst_n
@@ -54,7 +53,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_reg_odata <= DEFAULT_VAL;
 	end
 	else begin
-        o_reg_odata <= (wen & hit) ? i_wdata : o_reg_odata;
+        	o_reg_odata <= (wen & hit) ? i_wdata : o_reg_odata;
 	end
 end
     
