@@ -44,20 +44,20 @@ logic hit;
 //==================================
 //main code
 //==================================
-assign wen = i_wen & ((i_test_mode_status & SUPPORT_TEST_MODE_WR) | (i_cfg_mode_status & SUPPORT_CFG_MODE_WR));
-assign ren = i_ren & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
 assign hit = (i_addr==REG_ADDR);
-   
+assign wen = i_wen & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_WR) | (i_cfg_mode_status & SUPPORT_CFG_MODE_WR));
+assign ren = i_ren & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
+  
 always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(i_rst_n) begin
 		o_reg_odata <= DEFAULT_VAL;
 	end
 	else begin
-        	o_reg_odata <= (wen & hit) ? i_wdata : o_reg_odata;
+        	o_reg_odata <= wen ? i_wdata : o_reg_odata;
 	end
 end
     
-assign o_rdata = (ren & hit) ? o_reg_odata : {{DW{1'b0}}}; 
+assign o_rdata = ren ? o_reg_odata : {{DW{1'b0}}}; 
 
 // synopsys translate_off    
 //==================================
