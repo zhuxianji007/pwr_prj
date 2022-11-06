@@ -16,13 +16,13 @@ module ro_reg #(
     parameter SUPPORT_CFG_MODE_RD  = 1'b1, 
     parameter END_OF_LIST          = 1
 )( 
-    input  logic 		       i_ren			       ,
+    input  logic 		   i_ren,
     input  logic           i_test_mode_status,
     input  logic           i_cfg_mode_status ,
-    input  logic [AW-1: 0] i_addr			       ,
-    input  logic [DW-1: 0] i_ff_data         ,//from inner logic flip_flop
-    output logic [DW-1: 0] o_rdata	         ,
-    input  logic           i_clk	           ,
+    input  logic [AW-1: 0] i_addr,
+    input  logic [DW-1: 0] i_ff_data,//from inner logic flip_flop
+    output logic [DW-1: 0] o_rdata,
+    input  logic           i_clk,
     input  logic           i_rst_n
  );
 //==================================
