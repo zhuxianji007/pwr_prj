@@ -50,16 +50,16 @@ assign wen = i_wen & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_WR) | (i_cfg
 assign ren = i_ren & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
   
 generate
-	for(genvar i=0; i<DW; i=i+1) begin: REG_DATA_BLK
-		always_ff@(posedge i_clk or negedge i_rst_n) begin
-  			if(~i_rst_n) begin
-				reg_data[i] <= DEFAULT_VAL[i];
-			end
-  			else begin
-				reg_data[i] <= (i_lgc_wen[i] & i_lgc_wdata[i]) ? 1'b1 : ((wen & i_wdata[i]) ? 1'b0 : reg_data[i]);
-			end
-		end
+for(genvar i=0; i<DW; i=i+1) begin: REG_DATA_BLK
+    always_ff@(posedge i_clk or negedge i_rst_n) begin
+        if(~i_rst_n) begin
+	    reg_data[i] <= DEFAULT_VAL[i];
 	end
+  	else begin
+	    reg_data[i] <= (i_lgc_wen[i] & i_lgc_wdata[i]) ? 1'b1 : ((wen & i_wdata[i]) ? 1'b0 : reg_data[i]);
+	end
+    end
+end
 endgenerate
     
 assign o_rdata = ren ? reg_data : {DW{1'b0}}; 
