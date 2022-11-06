@@ -11,7 +11,7 @@
 module ro_reg #(
     parameter DW                   = 8,
     parameter AW                   = 8,
-    parameter REG_ADDR             = {{AW{1'b0}}},
+    parameter REG_ADDR             = {AW{1'b0}},
     parameter SUPPORT_TEST_MODE_RD = 1'b1,
     parameter SUPPORT_CFG_MODE_RD  = 1'b1, 
     parameter END_OF_LIST          = 1
@@ -40,7 +40,7 @@ logic hit;
 assign hit = (i_addr==REG_ADDR);
 assign ren = i_ren & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
    
-assign o_rdata = ren ? i_ff_data : {{DW{1'b0}}}; 
+assign o_rdata = ren ? i_ff_data : {DW{1'b0}}; 
 
 // synopsys translate_off    
 //==================================
