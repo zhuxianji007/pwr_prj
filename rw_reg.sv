@@ -9,14 +9,14 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module rw_reg #(
-    parameter DW                   = 8            ,
-    parameter AW                   = 8            ,
-    parameter DEFAULT_VAL          = {{DW{1'b0}}} ,
-    parameter REG_ADDR             = {{AW{1'b0}}} ,
-    parameter SUPPORT_TEST_MODE_WR = 1'b1         ,
-    parameter SUPPORT_TEST_MODE_RD = 1'b1         ,
-    parameter SUPPORT_CFG_MODE_WR  = 1'b1         ,
-    parameter SUPPORT_CFG_MODE_RD  = 1'b1         , 
+    parameter DW                   = 8          ,
+    parameter AW                   = 8          ,
+    parameter DEFAULT_VAL          = {DW{1'b0}} ,
+    parameter REG_ADDR             = {AW{1'b0}} ,
+    parameter SUPPORT_TEST_MODE_WR = 1'b1       ,
+    parameter SUPPORT_TEST_MODE_RD = 1'b1       ,
+    parameter SUPPORT_CFG_MODE_WR  = 1'b1       ,
+    parameter SUPPORT_CFG_MODE_RD  = 1'b1       , 
     parameter END_OF_LIST          = 1
 )( 
     input  logic           i_wen              ,
@@ -57,7 +57,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 	end
 end
     
-assign o_rdata = ren ? o_reg_odata : {{DW{1'b0}}}; 
+assign o_rdata = ren ? o_reg_odata : {DW{1'b0}}; 
 
 // synopsys translate_off    
 //==================================
