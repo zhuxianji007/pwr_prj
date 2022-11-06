@@ -11,8 +11,8 @@
 module rwc_reg #(
     parameter DW 		   		         = 8,
     parameter AW 	       		       = 8,
-    parameter DEFAULT_VAL  		     = {{DW{1'b0}}},
-    parameter REG_ADDR     		     = {{AW{1'b0}}},
+    parameter DEFAULT_VAL  		     = {DW{1'b0}},
+    parameter REG_ADDR     		     = {AW{1'b0}},
     parameter SUPPORT_TEST_MODE_WR = 1'b1,
     parameter SUPPORT_TEST_MODE_RD = 1'b1,
     parameter SUPPORT_CFG_MODE_WR  = 1'b1,
@@ -61,7 +61,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
   end
 end
     
-assign o_rdata = ren ? reg_data : {{DW{1'b0}}}; 
+assign o_rdata = ren ? reg_data : {DW{1'b0}}; 
 
 // synopsys translate_off    
 //==================================
