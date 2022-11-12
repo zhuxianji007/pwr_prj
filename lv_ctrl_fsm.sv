@@ -73,11 +73,12 @@ localparam BIST_ST         = FSM_ST_W'(10);
 //==================================
 //var delcaration
 //==================================
-logic 			lvhv_err0;
-logic 			lvhv_err1;
-logic 			lvhv_err2;
-logic [FSM_ST_W-1: 0] 	cur_st	 ;
-logic [FSM_ST_W-1: 0] 	nxt_st	 ;
+logic 			lvhv_err0	 ;
+logic 			lvhv_err1	 ;
+logic 			lvhv_err2	 ;
+logic [FSM_ST_W-1: 0] 	cur_st	 	 ;
+logic [FSM_ST_W-1: 0] 	nxt_st	 	 ;
+logic                   fsm_efuse_load_en;
 //==================================
 //main code
 //==================================
@@ -106,12 +107,14 @@ always_comb begin
     	endcase
 end
 
+assign fsm_efuse_load_en = (cur_st==POWER_DOWN_ST) && (nxt_st==WAIT_ST);
+	
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     	if(~i_rst_n) begin
         	o_fsm_efuse_load_en <= 1'b0;
     	end
     	else begin
-		o_fsm_efuse_load_en <= (cur_st==POWER_DOWN_ST) && (nxt_st==WAIT_ST);
+		o_fsm_efuse_load_en <= fsm_efuse_load_en;
     	end
 end	
 	
