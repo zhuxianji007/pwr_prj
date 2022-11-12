@@ -107,7 +107,7 @@ always_comb begin
     	endcase
 end
 
-assign fsm_efuse_load_en = (cur_st==POWER_DOWN_ST) && (nxt_st==WAIT_ST);
+assign fsm_efuse_load_en = (cur_st==POWER_DOWN_ST) && (nxt_st==WAIT_ST) && ~i_efuse_vld;
 	
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     	if(~i_rst_n) begin
