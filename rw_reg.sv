@@ -71,6 +71,11 @@ assign o_rcrc  = ren ? crc_data   : {CRC_W{1'b0}};
 //==================================
 //assertion
 //==================================
-//    
+`ifdef ASSERT_ON
+singal_wr_rd_chk : assert property(wr_rd_chk);
+property wr_rd_chk;
+	@(posedge i_clk) (wen ^ ren);
+endproperty
+`endif
 // synopsys translate_on    
 endmodule
