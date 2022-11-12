@@ -49,6 +49,10 @@ module lv_ctrl_fsm #(
 	
     output logic           o_fsm_efuse_load_en  ,
     input  logic           i_efuse_fsm_load_done,
+
+    output logic           o_fsm_ow_ctrl_req_adc,
+    input  logic           i_ow_ctrl_fsm_ack_adc,
+    input  logic           i_ow_ctrl_fsm_ack_adc_status, //0: ow comm ok; 1: ow comm err.
 		
     input  logic           i_clk	   ,
     input  logic           i_rst_n          //hardware reset
@@ -73,12 +77,14 @@ localparam BIST_ST         = FSM_ST_W'(10);
 //==================================
 //var delcaration
 //==================================
-logic 			lvhv_err0	 ;
-logic 			lvhv_err1	 ;
-logic 			lvhv_err2	 ;
-logic [FSM_ST_W-1: 0] 	cur_st	 	 ;
-logic [FSM_ST_W-1: 0] 	nxt_st	 	 ;
-logic                   fsm_efuse_load_en;
+logic 			               lvhv_err0	            ;
+logic 			               lvhv_err1	            ;
+logic 			               lvhv_err2	            ;
+logic [FSM_ST_W-1:          0] cur_st	 	            ;
+logic [FSM_ST_W-1:          0] nxt_st	 	            ;
+logic                          fsm_efuse_load_en        ;
+logic                          efuse_fsm_load_done_lock ;
+logic [FSM_REQ_ADC_CNT_W-1: 0] wait_st_req_adc_cnt      ;
 //==================================
 //main code
 //==================================
@@ -93,8 +99,23 @@ end
 
 always_comb begin
     	case(cur_st)
-	    POWER_DOWN_ST  :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : WAIT_ST ; end
-	    WAIT_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
+	    POWER_DOWN_ST  :  begin 
+            if(~i_power_on) begin
+                nxt_st = POWER_DOWN_ST;
+            end
+            else begin
+                nxt_st = WAIT_ST ; 
+            end
+        end
+	    WAIT_ST        :  begin 
+            if(~i_power_on) begin
+                nxt_st = POWER_DOWN_ST;
+            end
+            else if(efuse_fsm_load_done_lock & ~i_efuse_vld) begin
+                nxt_st = TEST_ST;
+            end
+            else if()
+        end
 	    TEST_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    NORMAL_ST      :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    FAILSAFE_ST    :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
@@ -114,10 +135,33 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         	o_fsm_efuse_load_en <= 1'b0;
     	end
     	else begin
-		o_fsm_efuse_load_en <= fsm_efuse_load_en;
+		    o_fsm_efuse_load_en <= fsm_efuse_load_en;
     	end
 end	
-	
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+        if(~i_rst_n) begin
+            efuse_fsm_load_done_lock <= 1'b0;
+        end    
+        else if(fsm_efuse_load_en) begin
+            efuse_fsm_load_done_lock <= 1'b0;
+        end
+        else if(i_efuse_fsm_load_done) begin
+            efuse_fsm_load_done_lock <= 1'b1;
+        end
+        else;
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        wait_st_req_adc_cnt <= FSM_REQ_ADC_CNT_W'(0);
+    end    
+    else if((cur_st==WAIT_ST) && i_efuse_vld && i_ow_ctrl_fsm_ack_adc && ~i_ow_ctrl_fsm_ack_adc_status) begin
+        wait_st_req_adc_cnt <= (wait_st_req_adc_cnt==(FSM_REQ_ADC_NUM-1)) ? FSM_REQ_ADC_CNT_W'(0) : (wait_st_req_adc_cnt+1'b1);
+    end
+    else;
+end
+
 always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_pwm_ctrl <= 1'b0;
