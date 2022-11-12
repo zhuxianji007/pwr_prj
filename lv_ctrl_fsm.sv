@@ -77,18 +77,23 @@ localparam BIST_ST         = FSM_ST_W'(10);
 //==================================
 //var delcaration
 //==================================
-logic 			               lvhv_err0	            ;
-logic 			               lvhv_err1	            ;
-logic 			               lvhv_err2	            ;
-logic [FSM_ST_W-1:          0] cur_st	 	            ;
-logic [FSM_ST_W-1:          0] nxt_st	 	            ;
-logic                          fsm_efuse_load_en        ;
-logic                          efuse_fsm_load_done_lock ;
-logic                          efuse_fsm_load_done_lock_ff;
-logic                          wait_st_req_adc_flag     ;
-logic                          wait_st_req_adc_flag_ff  ;
-logic [FSM_REQ_ADC_CNT_W-1: 0] wait_st_req_adc_cnt      ;
-logic                          wait_st_req_adc_done     ;
+logic                          lvhv_err0	                ;
+logic                          lvhv_err1	                ;
+logic                          lvhv_err2	                ;
+logic [FSM_ST_W-1:          0] cur_st	 	                ;
+logic [FSM_ST_W-1:          0] nxt_st	 	                ;
+logic                          fsm_efuse_load_en            ;
+logic                          efuse_fsm_load_done_lock     ;
+logic                          efuse_fsm_load_done_lock_ff  ;
+logic                          wait_st_req_adc_flag         ;
+logic                          wait_st_req_adc_flag_ff      ;
+logic [FSM_REQ_ADC_CNT_W-1: 0] wait_st_req_adc_cnt          ;
+logic                          wait_st_req_adc_done         ;
+logic                          fault_st_pwm_ctrl_on         ;
+logic                          fault_st_pwm_ctrl_off        ;
+loigc                          cfg_st_err_on                ;
+logic                          cfg_st_err_off               ;
+logic                          all_err                      ;
 //==================================
 //main code
 //==================================
@@ -96,6 +101,7 @@ assign lvhv_err0 = i_lv_vsup_uv_err || i_lv_vsup_ov_err || i_lv_pwm_dt_err || i_
                    || i_hv_vcc_uv_err || i_hv_vcc_ov_err || i_hv_ot_err || i_hv_oc_err || i_hv_desat_err || i_hv_scp_err;            
 assign lvhv_err1 = i_lv_vsup_uv_err || i_lv_vsup_ov_err || i_hv_vcc_uv_err || i_hv_vcc_ov_err || i_hv_ot_err || i_hv_desat_err || i_hv_scp_err;
 assign lvhv_err2 = i_lv_pwm_dt_err || i_lv_pwm_mm_err || i_hv_oc_err;
+assign all_err   = i_ow_com_err || i_ow_wdg_err || i_spi_err || i_crc_wdg_err || lvhv_err0;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -185,9 +191,38 @@ always_comb begin
             end
             else;
         end
-	    OW_WDG_FAULT_ST:  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
-	    FAULT_ST       :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
-	    CFG_ST         :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
+	    OW_WDG_FAULT_ST : begin 
+            if(~i_power_on) begin
+                nxt_st = POWER_DOWN_ST;
+            end
+            else if(i_sft_rst || ~i_ow_wdg_err) begin
+                nxt_st = NORMAL_ST;
+            end
+            else;
+        end
+	    FAULT_ST : begin 
+            if(~i_power_on) begin 
+                nxt_st = POWER_DOWN_ST;
+            end
+            else if(i_cfg_en) begin
+                nxt_st = CFG_ST;
+            end
+            else if(~lvhv_err0 && ~i_fsenb_n) begin
+                nxt_st = FAILSAFE_ST;
+            end
+            else;
+        end
+	    CFG_ST : begin 
+            if(~i_power_on) begin
+                nxt_st = POWER_DOWN_ST;
+            end
+            else if(~all_err && ~i_cfg_en &&  i_fsenb_n) begin
+                nxt_st = NORMAL_ST;
+            end
+            else if(~all_err && ~i_cfg_en && ~i_fsenb_n) begin
+                nxt_st = FAILSAFE_ST;
+            end
+        end
 	    RST_ST         :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    BIST_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
     endcase
@@ -281,14 +316,20 @@ assign wait_st_req_adc_done = (wait_st_req_adc_cnt==(FSM_REQ_ADC_NUM-1)) && i_ow
 //======End of WAIT_ST FLOW======
 
 //======================output ctrl signal=============
+assign fault_st_pwm_ctrl_on = (cur_st==FAILSAFE_ST) &&  (i_spi_err || i_lv_pwm_dt_err || i_lv_pwm_mm_err);
+assign fault_st_pwm_ctrl_off= (cur_st==FAILSAFE_ST) && ~(i_spi_err || i_lv_pwm_dt_err || i_lv_pwm_mm_err); 
+assign cfg_st_err_on        = (cur_st==CFG_ST) &&  all_err;
+assign cfg_st_err_off       = (cur_st==CFG_ST) && ~all_err;
+
 always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_pwm_ctrl <= 1'b0;
 	end
-	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)) begin
+	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
+            || fault_st_pwm_ctrl_off || (cur_st==CFG_ST)) begin
         o_pwm_ctrl <= 1'b0;
     end
-	else if(cur_st==NORMAL_ST) begin
+	else if((cur_st==NORMAL_ST) || fault_st_pwm_ctrl_on) begin
 		o_pwm_ctrl <= 1'b1;
 	end
     else;
@@ -298,10 +339,11 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_crc_wdg_ctrl <= 1'b0;
 	end
-	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==OW_WDG_FAULT_ST)) begin
+	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==OW_WDG_FAULT_ST)
+            || (cur_st==CFG_ST)) begin
         o_crc_wdg_ctrl <= 1'b0;
     end
-	else if((cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)) begin
+	else if((cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST) || (cur_st==FAULT_ST)) begin
 		o_crc_wdg_ctrl <= 1'b1;
 	end
     else;
@@ -311,10 +353,11 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_ow_wdg_ctrl <= 1'b0;
 	end
-	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==OW_WDG_FAULT_ST)) begin
+	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==OW_WDG_FAULT_ST)
+            || (cur_st==CFG_ST)) begin
         o_ow_wdg_ctrl <= 1'b0;
     end
-	else if((cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)) begin
+	else if((cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST) || (cur_st==FAULT_ST)) begin
 		o_ow_wdg_ctrl <= 1'b1;
 	end
     else;
@@ -328,7 +371,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         o_spi_ctrl <= 1'b0;
     end
 	else if((cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST)) begin
+            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
 		o_spi_ctrl <= 1'b1;
 	end
     else;
@@ -339,7 +382,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_bist_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st)==OW_WDG_FAULT_ST) begin
+            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
         o_bist_ctrl <= 1'b0;
     end
 	else if(cur_st==BIST_ST) begin
@@ -353,10 +396,10 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_cfg_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST)) begin
+            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST)) begin
         o_cfg_ctrl <= 1'b0;
     end
-	else if((cur_st==TEST_ST)) begin
+	else if((cur_st==TEST_ST) || (cur_st==CFG_ST)) begin
 		o_cfg_ctrl <= 1'b1;
 	end
     else;
@@ -370,7 +413,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         o_ow_comm_ctrl <= 1'b0;
     end
 	else if((cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST)) begin
+            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
 		o_ow_comm_ctrl <= 1'b1;
 	end
     else;
@@ -381,7 +424,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_fsafe_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==NORMAL_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST)) begin
+            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
         o_fsafe_ctrl <= 1'b0;
     end
 	else if(cur_st==FAILSAFE_ST) begin
@@ -394,10 +437,10 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_int_n <= 1'b1;
 	end
-	else if((cur_st==POWER_DOWN_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST)) begin
+	else if((cur_st==POWER_DOWN_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || cfg_st_err_off) begin
         o_int_n <= 1'b1;
     end
-	else if((cur_st==WAIT_ST) || (cur_st==OW_COMM_ERR_ST) || (cur_st==OW_WDG_FAULT_ST)) begin
+	else if((cur_st==WAIT_ST) || (cur_st==OW_COMM_ERR_ST) || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || cfg_st_err_on) begin
 		o_int_n <= 1'b0;
 	end
     else;
