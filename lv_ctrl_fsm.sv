@@ -37,13 +37,14 @@ module lv_ctrl_fsm #(
     input  logic           i_bist_en       ,
     input  logic           i_sft_rst       ,//software reset
 	
-    output logic           o_pwm_en        ,
-    output logic           o_crc_wdg_en    ,
-    output logic           o_ow_wdg_en     ,
-    output logic           o_spi_en        ,
-    output logic           o_bist_en       ,
-    output logic           o_cfg_en        ,
-    output logic           o_fsc_en        ,//failsafe ctrl enb
+    output logic           o_pwm_ctrl      ,//1: enable; 0: disable
+    output logic           o_crc_wdg_ctrl  ,
+    output logic           o_ow_wdg_ctrl   ,
+    output logic           o_spi_ctrl      ,
+    output logic           o_bist_ctrl     ,
+    output logic           o_cfg_ctrl      ,
+    output logic           o_ow_comm_ctrl  ,
+    output logic           o_fsafe_ctrl    ,//failsafe ctrl enb
     output logic           o_int_n         ,//interupte
 		
     input  logic           i_clk	   ,
@@ -78,12 +79,12 @@ logic [FSM_ST_W-1: 0] 	nxt_st	 ;
 //main code
 //==================================
 always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        cur_st <= POWER_DOWN_ST;
-    end
-    else begin
-        cur_st <= nxt_st;
-    end
+    	if(~i_rst_n) begin
+        	cur_st <= POWER_DOWN_ST;
+    	end
+    	else begin
+        	cur_st <= nxt_st;
+    	end
 end
 
 always_comb begin
@@ -92,6 +93,30 @@ always_comb begin
 	    WAIT_ST       :  begin nxt_st = 
     endcase
 end
+		    
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+	if(~i_rst_n) begin
+		o_pwm_ctrl <= 1'b0;
+	end
+    	else if(cur_st==POWER_DOWN_ST) begin
+        	o_pwm_ctrl <= 1'b0;
+    	end
+	else if(cur_st==NORMAL_ST) begin
+		o_pwm_ctrl <= 1'b1;
+	end
+end
+		    
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+	if(~i_rst_n) begin
+		o_pwm_ctrl <= 1'b0;
+	end
+    	else if(cur_st==POWER_DOWN_ST) begin
+        	o_pwm_ctrl <= 1'b0;
+    	end
+	else if(cur_st==NORMAL_ST) begin
+		o_pwm_ctrl <= 1'b1;
+	end
+end		    
 // synopsys translate_off    
 //==================================
 //assertion
