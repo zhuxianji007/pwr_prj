@@ -14,12 +14,24 @@ module lv_ctrl_fsm #(
 )( 
     input  logic           i_pwr_on        ,
     input  logic           i_test_mode     ,
-    input  logic           i_reg_efuse_vld ,//load efuse's data to register, come frome register.
-    input  logic           i_reg_efuse_done,//come from register.	
+    input  logic           i_efuse_vld     ,//load efuse's data to register, come frome register.
+    input  logic           i_efuse_done    ,//come from register.	
     input  logic           i_fsenb_n       ,//0: vld; 1: no_vld
     input  logic           i_ow_com_err    ,//one wire bus communicate voilate protocol or crc chk err.
     input  logic           i_ow_wdg_err    ,//one wire bus lost ack.
-    input  logic           i_spi_err       ,//
+    input  logic           i_spi_err       ,//spi bus communitcate voilate protocol or crc chk err.
+    input  logic           i_crc_wdg_err   ,//watch dog scan cfg register,and chk its crc.if chk result is uncorrect, generate this err.
+    input  logic           i_lv_pwm_dt_err ,//lv pwm deadtime err.
+    input  logic           i_lv_pwm_mm_err ,//lv pwm mismatch err.
+    input  logic           i_lv_vsup_uv_err,//lv voltage supply under voltage err.
+    input  logic           i_lv_vsup_ov_err,//lv voltage supply over voltage.
+    input  logic           i_hv_vcc_uv_err ,//hv voltage under voltage err.
+    input  logic           i_hv_vcc_ov_err ,//hv voltage over voltage err.
+    input  logic           i_hv_ot_err     ,//hv over temperature err.
+    input  logic           i_hv_oc_err     ,//hv over current err.
+    input  logic           i_hv_desat_err  ,
+    input  logic           i_hv_scp_err    ,//hv short circuit err.
+	
 	
     input  logic           i_clk	      ,
     input  logic           i_rst_n
@@ -31,7 +43,7 @@ module lv_ctrl_fsm #(
 //==================================
 //var delcaration
 //==================================
-
+logic lvhv_err0;
 //==================================
 //main code
 //==================================
