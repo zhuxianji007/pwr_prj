@@ -46,6 +46,9 @@ module lv_ctrl_fsm #(
     output logic           o_ow_comm_ctrl  ,//1: enable; 0: disable
     output logic           o_fsafe_ctrl    ,//failsafe ctrl enb
     output logic           o_int_n         ,//interupte
+	
+    output logic           o_fsm_efuse_load_en  ,
+    input  logic           i_efuse_fsm_load_done,
 		
     input  logic           i_clk	   ,
     input  logic           i_rst_n          //hardware reset
@@ -88,7 +91,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 end
 
 always_comb begin
-    case(cur_st)
+    	case(cur_st)
 	    POWER_DOWN_ST  :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : WAIT_ST ; end
 	    WAIT_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    TEST_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
@@ -100,9 +103,18 @@ always_comb begin
 	    CFG_ST         :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    RST_ST         :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    BIST_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
-    endcase
+    	endcase
 end
-		    
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    	if(~i_rst_n) begin
+        	o_fsm_efuse_load_en <= 1'b0;
+    	end
+    	else begin
+		o_fsm_efuse_load_en <= (cur_st==POWER_DOWN_ST) && (nxt_st==WAIT_ST);
+    	end
+end	
+	
 always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_pwm_ctrl <= 1'b0;
