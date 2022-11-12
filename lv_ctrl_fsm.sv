@@ -35,16 +35,19 @@ module lv_ctrl_fsm #(
     input  logic           i_normal_en     ,
     input  logic           i_cfg_en        ,
     input  logic           i_bist_en       ,
-    input  logic           i_sft_rst       ,//soft reset
+    input  logic           i_sft_rst       ,//software reset
+	
     output logic           o_pwm_en        ,
     output logic           o_crc_wdg_en    ,
     output logic           o_ow_wdg_en     ,
     output logic           o_spi_en        ,
+    output logic           o_bist_en       ,
+    output logic           o_cfg_en        ,
     output logic           o_fsc_en        ,//failsafe ctrl enb
     output logic           o_int_n         ,//interupte
 		
     input  logic           i_clk	   ,
-    input  logic           i_rst_n
+    input  logic           i_rst_n          //hardware reset
  );
 //==================================
 //local param delcaration
@@ -83,7 +86,12 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-	
+always_comb begin
+    case(cur_st)
+	    POWER_DOWN_ST :  begin nxt_st = i_power_on ? WAIT_ST : POWER_DOWN_ST ; end
+	    WAIT_ST       :  begin nxt_st = 
+    endcase
+end
 // synopsys translate_off    
 //==================================
 //assertion
