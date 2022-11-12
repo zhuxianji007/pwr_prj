@@ -38,12 +38,12 @@ module lv_ctrl_fsm #(
     input  logic           i_sft_rst       ,//software reset
 	
     output logic           o_pwm_ctrl      ,//1: enable; 0: disable
-    output logic           o_crc_wdg_ctrl  ,
-    output logic           o_ow_wdg_ctrl   ,
-    output logic           o_spi_ctrl      ,
-    output logic           o_bist_ctrl     ,
-    output logic           o_cfg_ctrl      ,
-    output logic           o_ow_comm_ctrl  ,
+    output logic           o_crc_wdg_ctrl  ,//1: enable; 0: disable
+    output logic           o_ow_wdg_ctrl   ,//1: enable; 0: disable
+    output logic           o_spi_ctrl      ,//1: enable; 0: disable
+    output logic           o_bist_ctrl     ,//1: enable; 0: disable
+    output logic           o_cfg_ctrl      ,//1: enable; 0: disable
+    output logic           o_ow_comm_ctrl  ,//1: enable; 0: disable
     output logic           o_fsafe_ctrl    ,//failsafe ctrl enb
     output logic           o_int_n         ,//interupte
 		
