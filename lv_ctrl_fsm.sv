@@ -75,12 +75,12 @@ logic [FSM_ST_W-1: 0] 	nxt_st	 ;
 //main code
 //==================================
 always_ff@(posedge i_clk or negedge i_rst_n) begin
-	if(~i_rst_n) begin
-		cur_st <= POWER_DOWN_ST;
-	end
-	else begin
-		cur_st <= nxt_st;
-	end
+    if(~i_rst_n) begin
+        cur_st <= POWER_DOWN_ST;
+    end
+    else begin
+        cur_st <= nxt_st;
+    end
 end
 
 	
