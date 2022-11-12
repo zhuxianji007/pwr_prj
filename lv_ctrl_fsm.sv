@@ -84,21 +84,25 @@ logic [FSM_ST_W-1:          0] cur_st	 	            ;
 logic [FSM_ST_W-1:          0] nxt_st	 	            ;
 logic                          fsm_efuse_load_en        ;
 logic                          efuse_fsm_load_done_lock ;
+logic                          efuse_fsm_load_done_lock_ff;
+logic                          wait_st_req_adc_flag     ;
+logic                          wait_st_req_adc_flag_ff  ;
 logic [FSM_REQ_ADC_CNT_W-1: 0] wait_st_req_adc_cnt      ;
+logic                          wait_st_req_adc_done     ;
 //==================================
 //main code
 //==================================
 always_ff@(posedge i_clk or negedge i_rst_n) begin
-    	if(~i_rst_n) begin
-        	cur_st <= POWER_DOWN_ST;
-    	end
-    	else begin
-        	cur_st <= nxt_st;
-    	end
+    if(~i_rst_n) begin
+        cur_st <= POWER_DOWN_ST;
+    end
+    else begin
+        cur_st <= nxt_st;
+    end
 end
 
 always_comb begin
-    	case(cur_st)
+    case(cur_st)
 	    POWER_DOWN_ST  :  begin 
             if(~i_power_on) begin
                 nxt_st = POWER_DOWN_ST;
@@ -114,7 +118,13 @@ always_comb begin
             else if(efuse_fsm_load_done_lock & ~i_efuse_vld) begin
                 nxt_st = TEST_ST;
             end
-            else if()
+            else if(~i_fsenb_n) begin
+                nxt_st = FAILSAFE_ST;
+            end
+            else if(i_normal_en) begin
+                nxt_st = NORMAL_ST;
+            end
+            else;
         end
 	    TEST_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    NORMAL_ST      :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
@@ -125,53 +135,108 @@ always_comb begin
 	    CFG_ST         :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    RST_ST         :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
 	    BIST_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
-    	endcase
+    endcase
 end
 
+//====WAIT_ST FLOW========
 assign fsm_efuse_load_en = (cur_st==POWER_DOWN_ST) && (nxt_st==WAIT_ST) && ~i_efuse_vld;
 	
 always_ff@(posedge i_clk or negedge i_rst_n) begin
-    	if(~i_rst_n) begin
-        	o_fsm_efuse_load_en <= 1'b0;
-    	end
-    	else begin
-		    o_fsm_efuse_load_en <= fsm_efuse_load_en;
-    	end
+    if(~i_rst_n) begin
+        o_fsm_efuse_load_en <= 1'b0;
+    end
+    else begin
+		o_fsm_efuse_load_en <= fsm_efuse_load_en;
+    end
 end	
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
-        if(~i_rst_n) begin
-            efuse_fsm_load_done_lock <= 1'b0;
-        end    
-        else if(fsm_efuse_load_en) begin
-            efuse_fsm_load_done_lock <= 1'b0;
-        end
-        else if(i_efuse_fsm_load_done) begin
-            efuse_fsm_load_done_lock <= 1'b1;
-        end
-        else;
-end
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        wait_st_req_adc_cnt <= FSM_REQ_ADC_CNT_W'(0);
+        efuse_fsm_load_done_lock <= 1'b0;
     end    
-    else if((cur_st==WAIT_ST) && i_efuse_vld && i_ow_ctrl_fsm_ack_adc && ~i_ow_ctrl_fsm_ack_adc_status) begin
-        wait_st_req_adc_cnt <= (wait_st_req_adc_cnt==(FSM_REQ_ADC_NUM-1)) ? FSM_REQ_ADC_CNT_W'(0) : (wait_st_req_adc_cnt+1'b1);
+    else if(fsm_efuse_load_en) begin
+        efuse_fsm_load_done_lock <= 1'b0;
+    end
+    else if(i_efuse_fsm_load_done) begin
+        efuse_fsm_load_done_lock <= 1'b1;
     end
     else;
 end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        efuse_fsm_load_done_lock_ff <= 1'b0;
+    end    
+    else begin
+        efuse_fsm_load_done_lock_ff <= efuse_fsm_load_done_lock;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        wait_st_req_adc_flag <= 1'b0;
+    end
+    else if((cur_st==WAIT_ST) && ~i_efuse_vld) begin
+        wait_st_req_adc_flag <= 1'b0;
+    end   
+    else if(i_efuse_vld && efuse_fsm_load_done_lock && ~efuse_fsm_load_done_lock_ff) begin
+        wait_st_req_adc_flag <= 1'b1;
+    end
+    else if(wait_st_req_adc_done) begin
+        wait_st_req_adc_flag <= 1'b0;
+    end
+    else;
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        wait_st_req_adc_flag_ff <= 1'b0;
+    end    
+    else begin
+        wait_st_req_adc_flag_ff <= wait_st_req_adc_flag;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_fsm_ow_ctrl_req_adc <= 1'b0;
+    end    
+    else begin
+        o_fsm_ow_ctrl_req_adc <= (wait_st_req_adc_flag && ~wait_st_req_adc_flag_ff) || (i_ow_ctrl_fsm_ack_adc && ~wait_st_req_adc_done);
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        wait_st_req_adc_cnt <= FSM_REQ_ADC_CNT_W'(0);
+    end
+    else if((cur_st==WAIT_ST) && ~i_efuse_vld) begin
+        wait_st_req_adc_cnt <= FSM_REQ_ADC_CNT_W'(0);
+    end    
+    else if((cur_st==WAIT_ST) && i_efuse_vld) begin 
+        if(i_ow_ctrl_fsm_ack_adc && ~i_ow_ctrl_fsm_ack_adc_status) begin
+            wait_st_req_adc_cnt <= (wait_st_req_adc_cnt==(FSM_REQ_ADC_NUM-1)) ? FSM_REQ_ADC_CNT_W'(0) : (wait_st_req_adc_cnt+1'b1);
+        end
+        else;
+    end
+    else;
+end
+
+assign wait_st_req_adc_done = (wait_st_req_adc_cnt==(FSM_REQ_ADC_NUM-1)) && i_ow_ctrl_fsm_ack_adc && ~i_ow_ctrl_fsm_ack_adc_status;
+//======End of WAIT_ST FLOW======
+
+//======================output ctrl signal=============
+always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_pwm_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST)) begin
-        	o_pwm_ctrl <= 1'b0;
-    	end
+        o_pwm_ctrl <= 1'b0;
+    end
 	else if(cur_st==NORMAL_ST) begin
 		o_pwm_ctrl <= 1'b1;
 	end
+    else;
 end
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -179,11 +244,12 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_crc_wdg_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST)) begin
-        	o_crc_wdg_ctrl <= 1'b0;
-    	end
+        o_crc_wdg_ctrl <= 1'b0;
+    end
 	else if(cur_st==NORMAL_ST) begin
 		o_crc_wdg_ctrl <= 1'b1;
 	end
+    else;
 end
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -191,23 +257,25 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_ow_wdg_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST)) begin
-        	o_ow_wdg_ctrl <= 1'b0;
-    	end
+        o_ow_wdg_ctrl <= 1'b0;
+    end
 	else if(cur_st==NORMAL_ST) begin
 		o_ow_wdg_ctrl <= 1'b1;
 	end
+    else;
 end	
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_spi_ctrl <= 1'b0;
 	end
-    	else if(cur_st==POWER_DOWN_ST) begin
-        	o_spi_ctrl <= 1'b0;
-    	end
+    else if(cur_st==POWER_DOWN_ST) begin
+        o_spi_ctrl <= 1'b0;
+    end
 	else if(cur_st==WAIT_ST) begin
 		o_spi_ctrl <= 1'b1;
 	end
+    else;
 end
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -215,11 +283,12 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_bist_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST)) begin
-        	o_bist_ctrl <= 1'b0;
-    	end
+        o_bist_ctrl <= 1'b0;
+    end
 	else if(cur_st==NORMAL_ST) begin
 		o_bist_ctrl <= 1'b0;
 	end
+    else;
 end
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -227,23 +296,25 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_cfg_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==NORMAL_ST)) begin
-        	o_cfg_ctrl <= 1'b0;
-    	end
+        o_cfg_ctrl <= 1'b0;
+    end
 	else if() begin
 		o_cfg_ctrl <= 1'b0;
 	end
+    else;
 end
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
 		o_ow_comm_ctrl <= 1'b0;
 	end
-    	else if(cur_st==POWER_DOWN_ST) begin
-        	o_ow_comm_ctrl <= 1'b0;
-    	end
+    else if(cur_st==POWER_DOWN_ST) begin
+        o_ow_comm_ctrl <= 1'b0;
+    end
 	else if((cur_st==NORMAL_ST) || (cur_st==WAIT_ST)) begin
 		o_ow_comm_ctrl <= 1'b1;
 	end
+    else;
 end
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -251,11 +322,12 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_fsafe_ctrl <= 1'b0;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST)) begin
-        	o_fsafe_ctrl <= 1'b0;
-    	end
-	else if() begin
-		o_fsafe_ctrl <= 1'b0;
+        o_fsafe_ctrl <= 1'b0;
+    end
+	else if(cur_st==FAILSAFE_ST) begin
+		o_fsafe_ctrl <= 1'b1;
 	end
+    else;
 end
 		    
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -263,12 +335,14 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 		o_int_n <= 1'b1;
 	end
 	else if((cur_st==POWER_DOWN_ST) || (cur_st==NORMAL_ST)) begin
-        	o_int_n <= 1'b1;
-    	end
+        o_int_n <= 1'b1;
+    end
 	else if((cur_st==WAIT_ST)) begin
 		o_int_n <= 1'b0;
 	end
-end		    
+    else;
+end
+
 // synopsys translate_off    
 //==================================
 //assertion
