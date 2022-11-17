@@ -74,11 +74,11 @@ localparam BIST_ST         = FSM_ST_W'(10);
 //==================================
 //var delcaration
 //==================================
-logic                          lvhv_err0	                ;
-logic                          lvhv_err1	                ;
-logic                          lvhv_err2	                ;
-logic [FSM_ST_W-1:          0] cur_st	 	                ;
-logic [FSM_ST_W-1:          0] nxt_st	 	                ;
+logic                          lvhv_err0                    ;
+logic                          lvhv_err1                    ;
+logic                          lvhv_err2                    ;
+logic [FSM_ST_W-1:          0] cur_st                       ;
+logic [FSM_ST_W-1:          0] nxt_st                       ;
 logic                          fsm_efuse_load_en            ;
 logic                          efuse_fsm_load_done_lock     ;
 logic                          efuse_fsm_load_done_lock_ff  ;
