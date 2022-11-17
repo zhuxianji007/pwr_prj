@@ -17,7 +17,7 @@ module lv_reg_slv #(
     parameter END_OF_LIST          = 1
 )(
     //spi reg access interface 
-    input  logic 		            i_spi_reg_ren                   ,
+    input  logic                    i_spi_reg_ren                   ,
     input  logic                    i_spi_reg_wen                   ,
     input  logic [REG_AW-1:   0]    i_spi_reg_addr                  ,
     input  logic [REG_DW-1:   0]    i_spi_reg_wdata                 ,
