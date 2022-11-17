@@ -9,25 +9,25 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module wo_reg #(
-    parameter DW 		   		   = 8          ,
-    parameter AW 	       		   = 8          ,
-    parameter DEFAULT_VAL  		   = {DW{1'b0}} ,
-    parameter REG_ADDR     		   = {AW{1'b0}} ,
+    parameter DW                   = 8          ,
+    parameter AW                   = 8          ,
+    parameter DEFAULT_VAL          = {DW{1'b0}} ,
+    parameter REG_ADDR             = {AW{1'b0}} ,
     parameter SUPPORT_TEST_MODE_WR = 1'b1       ,
     parameter SUPPORT_TEST_MODE_RD = 1'b1       ,
     parameter SUPPORT_CFG_MODE_WR  = 1'b1       ,
     parameter SUPPORT_CFG_MODE_RD  = 1'b1       , 
     parameter END_OF_LIST          = 1
 )( 
-    input  logic 		   i_wen		        ,
-    input  logic 		   i_ren			    ,
+    input  logic           i_wen                ,
+    input  logic           i_ren                ,
     input  logic           i_test_mode_status   ,
     input  logic           i_cfg_mode_status    ,
-    input  logic [AW-1: 0] i_addr			    ,
-    input  logic [DW-1: 0] i_wdata	            ,
+    input  logic [AW-1: 0] i_addr               ,
+    input  logic [DW-1: 0] i_wdata              ,
     output logic [DW-1: 0] o_rdata	            ,
-    output logic [DW-1: 0] o_reg_data           ，
-    input  logic           i_clk	            ,
+    output logic [DW-1: 0] o_reg_data           ,
+    input  logic           i_clk                ,
     input  logic           i_rst_n
  );
 //==================================
