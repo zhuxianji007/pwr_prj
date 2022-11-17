@@ -29,7 +29,7 @@ module rwc_reg #(
     output logic [DW-1: 0] o_reg_data           ,
     input  logic [DW-1: 0] i_lgc_wen            ,
     input  logic [DW-1: 0] i_lgc_wdata          ,
-    input  logic           i_clk	            ,
+    input  logic           i_clk                ,
     input  logic           i_rst_n
  );
 //==================================
