@@ -25,7 +25,7 @@ module wo_reg #(
     input  logic           i_cfg_mode_status    ,
     input  logic [AW-1: 0] i_addr               ,
     input  logic [DW-1: 0] i_wdata              ,
-    output logic [DW-1: 0] o_rdata	            ,
+    output logic [DW-1: 0] o_rdata              ,
     output logic [DW-1: 0] o_reg_data           ,
     input  logic           i_clk                ,
     input  logic           i_rst_n
