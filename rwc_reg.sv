@@ -26,6 +26,7 @@ module rwc_reg #(
     input  logic [AW-1: 0] i_addr			    ,
     input  logic [DW-1: 0] i_wdata	            ,
     output logic [DW-1: 0] o_rdata	            ,
+    output logic [DW-1: 0] o_reg_data           ,
     input  logic [DW-1: 0] i_lgc_wen            ,
     input  logic [DW-1: 0] i_lgc_wdata          ,
     input  logic           i_clk	            ,
@@ -61,8 +62,9 @@ for(genvar i=0; i<DW; i=i+1) begin: REG_DATA_BLK
     end
 end
 endgenerate
-    
-assign o_rdata = ren ? reg_data : {DW{1'b0}}; 
+
+assign o_reg_data = reg_data                   ;    
+assign o_rdata    = ren ? reg_data : {DW{1'b0}}; 
 
 // synopsys translate_off    
 //==================================
