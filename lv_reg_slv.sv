@@ -42,7 +42,7 @@ module lv_reg_slv #(
     input logic                     i_int_hv_vcc_ov                 ,
     input logic                     i_int_hv_vcc_uv                 ,
     input logic                     i_int_lv_vsup_ov                ,
-    input logic                     i_int_lv_vsup_uv                ,
+    input logic                     i_int_lv_vsup_uv_n              ,
 
     input logic                     i_int_vrtmon                    ,
     input logic                     i_int_fsifo                     ,
@@ -53,15 +53,11 @@ module lv_reg_slv #(
     input logic                     i_int_intb_lv                   ,
     input logic                     i_int_intb_hv                   ,
 
-    input logic [REG_DW-1:    0]    i_fsm_status                    ,
-    
+    input logic [REG_DW-1:    0]    i_fsm_status                    ,   
     input logic [9:           0]    i_adc1_data                     ,
     input logic [9:           0]    i_adc2_data                     ,
-
     input logic [15:          0]    i_bist_rult                     ,
-
     input logic [REG_DW-1:    0]    i_adc_status                    ,
-
 
     //output to inner logic
     output logic                    o_mode_efuse_done               ,
@@ -112,10 +108,11 @@ module lv_reg_slv #(
     output logic [7:          0]    o_iso_test_sw_reserved          ,
     output logic [3:          0]    o_iso_osc_jit_iso_tx_jit_adj    ,
     output logic [7:          0]    o_ana_reserved_reg_reserved     ,
-    output logic [3:          0]    o_t_deat_time_tdt_tdt           ,
+    output logic [3:          0]    o_t_dead_time_tdt_tdt           ,
     
     //to mcu interrput
-    output logic                    o_int_n                         ,
+    input  logic                    i_intb_hv_n                     ,
+    output logic                    o_intb_n                        ,
 
     input  logic                    i_test_mode_status              ,
     input  logic                    i_cfg_mode_status               ,
@@ -171,7 +168,7 @@ logic [REG_DW-1:    0] rdata_iso_rx_demo        ;
 logic [REG_DW-1:    0] rdata_iso_test_sw        ;
 logic [REG_DW-1:    0] rdata_iso_osc_jit        ;
 logic [REG_DW-1:    0] rdata_ana_reserved_reg   ;
-logic [REG_DW-1:    0] rdata_t_deat_time        ;
+logic [REG_DW-1:    0] rdata_t_dead_time        ;
 
 
 logic [REG_DW-1:    0] reg_mode                 ;
@@ -191,7 +188,7 @@ logic [REG_DW-1:    0] reg_iso_rx_demo          ;
 logic [REG_DW-1:    0] reg_iso_test_sw          ;
 logic [REG_DW-1:    0] reg_iso_osc_jit          ;
 logic [REG_DW-1:    0] reg_ana_reserved_reg     ;
-logic [REG_DW-1:    0] reg_t_deat_time          ;
+logic [REG_DW-1:    0] reg_t_dead_time          ;
 //==================================
 //var delcaration
 //==================================
@@ -418,7 +415,7 @@ rw_reg #(
 
 //STATUS2 REGISTER
 assign status2_lgc_wen = {i_int_hv_scp_flt, i_int_hv_desat_flt, i_int_hv_oc, i_int_hv_ot, 
-                           i_int_hv_vcc_ov, i_int_hv_vcc_uv, i_int_lv_vsup_ov, i_int_lv_vsup_uv};
+                           i_int_hv_vcc_ov, i_int_hv_vcc_uv, i_int_lv_vsup_ov, i_int_lv_vsup_uv_n};
 rwc_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -1016,13 +1013,13 @@ rw_reg #(
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
-    .o_rdata              (rdata_t_deat_time                            ),
-    .o_reg_data           (reg_t_deat_time                              ),
+    .o_rdata              (rdata_t_dead_time                            ),
+    .o_reg_data           (reg_t_dead_time                              ),
     .o_rcrc               (                                             ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_t_deat_time_tdt_tdt = reg_t_deat_time[7:4];
+assign o_t_dead_time_tdt_tdt = reg_t_dead_time[7:4];
 
 //spi reg in
 always_ff@(posedge i_clk or negedge rst_n) begin
@@ -1061,7 +1058,7 @@ assign reg_spi_rdata = rdata_lvhv_device_id | rdata_mode | rdata_com_config0 | r
                        rdata_status3 | rdata_status4 | rdata_adc1_data_low | rdata_adc1_data_hig | rdata_adc2_data_low | rdata_adc2_data_hig |
                        rdata_bist_rult1 | rdata_bist_rult2 | rdata_adc_status | rdata_die1_id | rdata_die2_id | rdata_die3_id | rdata_bgr_trim | rdata_ibias_coe_iso |
                        rdata_osc48m | rdata_iso_oscb_freq_adj | rdata_iso_reserved_reg | rdata_iso_amp_ibias | rdata_iso_rx_demo | rdata_iso_test_sw | rdata_iso_osc_jit |
-                       rdata_ana_reserved_reg | rdata_t_deat_time;
+                       rdata_ana_reserved_reg | rdata_t_dead_time;
 
 always_ff@(posedge i_clk or negedge rst_n) begin
     if(~rst_n) begin
@@ -1077,10 +1074,10 @@ assign lv_interrupt = (reg_status1 & reg_mask1) | (reg_status2 & reg_mask2);
 
 always_ff@(posedge i_clk or negedge rst_n) begin
     if(~rst_n) begin
-        o_int_n <= 1'b1;
+        o_intb_n <= 1'b1;
     end
     else begin
-        o_int_n <= ~(|lv_interrupt);
+        o_intb_n <= ~(|lv_interrupt) & i_intb_hv_n;
     end
 end
 
