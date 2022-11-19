@@ -40,7 +40,7 @@ module lv_reg_slv #(
     input logic                     i_int_hv_oc                     ,
     input logic                     i_int_hv_ot                     ,
     input logic                     i_int_hv_vcc_ov                 ,
-    input logic                     i_int_hv_vcc_uv                 ,
+    input logic                     i_int_hv_vcc_uv_n               ,
     input logic                     i_int_lv_vsup_ov                ,
     input logic                     i_int_lv_vsup_uv_n              ,
 
@@ -117,13 +117,13 @@ module lv_reg_slv #(
     input  logic                    i_test_mode_status              ,
     input  logic                    i_cfg_mode_status               ,
     input  logic                    i_clk                           ,
-    input  logic                    i_rst_n                         //hardware rst.
+    input  logic                    i_hrst_n                        ,
+    input  logic                    i_srst_n                        ,
+    output logic                    o_rst_n                     
 );
 //==================================
 //local param delcaration
 //==================================
-logic                  hrst_n                   ;
-logic                  srst_n                   ;
 logic                  rst_n                    ;
 
 logic                  spi_reg_wen              ;
@@ -136,7 +136,7 @@ logic [REG_CRC_W-1: 0] crc_data                 ;
 logic [REG_DW-1:    0] status1_lgc_wen          ;
 logic [REG_DW-1:    0] status2_lgc_wen          ;
 logic [REG_DW-1:    0] status3_in               ;
-logic                  lv_interrupt             ;
+logic                  intb_lv_n                ;
 
 logic [REG_DW-1:    0] rdata_lvhv_device_id     ;
 logic [REG_DW-1:    0] rdata_mode               ;
@@ -196,14 +196,12 @@ logic [REG_DW-1:    0] reg_t_dead_time          ;
 //==================================
 //main code
 //==================================
-assign hrst_n = i_rst_n        ;
-assign srst_n = ~reg_mode[0:0] ;
-
 rstn_merge U_RSTN_MERGE(
-    .i_hrst_n   (hrst_n),
-    .i_srst_n   (srst_n),
-    .o_rst_n    (rst_n )
-)
+    .i_hrst_n   (i_hrst_n),
+    .i_srst_n   (i_srst_n),
+    .o_rst_n    (rst_n   )
+);
+assign o_rst_n = rst_n;
 
 gen_reg_crc U_GEN_REG_CRC(
     .data_in    (i_spi_reg_wdata    ),
@@ -247,7 +245,7 @@ rw_reg #(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
     .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_cfg_mode_status    (1'b1                                         ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata[7:1]                           ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -272,7 +270,7 @@ rw_reg #(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
     .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_cfg_mode_status    (1'b1                                         ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata[0:0]                           ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -415,7 +413,7 @@ rw_reg #(
 
 //STATUS2 REGISTER
 assign status2_lgc_wen = {i_int_hv_scp_flt, i_int_hv_desat_flt, i_int_hv_oc, i_int_hv_ot, 
-                           i_int_hv_vcc_ov, i_int_hv_vcc_uv, i_int_lv_vsup_ov, i_int_lv_vsup_uv_n};
+                           i_int_hv_vcc_ov, i_int_hv_vcc_uv_n, i_int_lv_vsup_ov, i_int_lv_vsup_uv_n};
 rwc_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -1070,14 +1068,14 @@ always_ff@(posedge i_clk or negedge rst_n) begin
 end
 
 //interrupt proc
-assign lv_interrupt = (reg_status1 & reg_mask1) | (reg_status2 & reg_mask2);
+assign intb_lv_n = ~(|((reg_status1 & reg_mask1) | (reg_status2 & reg_mask2)));
 
 always_ff@(posedge i_clk or negedge rst_n) begin
     if(~rst_n) begin
         o_intb_n <= 1'b1;
     end
     else begin
-        o_intb_n <= ~(|lv_interrupt) & i_intb_hv_n;
+        o_intb_n <= intb_lv_n & i_intb_hv_n;
     end
 end
 
@@ -1090,3 +1088,4 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
