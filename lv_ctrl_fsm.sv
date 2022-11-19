@@ -84,6 +84,8 @@ logic                          efuse_fsm_load_done_lock     ;
 logic                          efuse_fsm_load_done_lock_ff  ;
 logic                          wait_st_req_adc_flag         ;
 logic                          wait_st_req_adc_flag_ff      ;
+logic                          failsafe_wait_req_adc        ;
+logic                          failsafe_wait_req_adc_ff     ;
 logic [FSM_REQ_ADC_CNT_W-1: 0] wait_st_req_adc_cnt          ;
 logic                          wait_st_req_adc_done         ;
 logic                          fault_st_pwm_ctrl_on         ;
@@ -261,12 +263,23 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
+        failsafe_wait_req_adc    <= 1'b0;
+        failsafe_wait_req_adc_ff <= 1'b0;   
+    end
+    else begin
+        failsafe_wait_req_adc    <= (cur_st==FAILSAFE_ST) && (nxt_st==WAIT_ST);
+        failsafe_wait_req_adc_ff <= failsafe_wait_req_adc;
+    end    
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
         wait_st_req_adc_flag <= 1'b0;
     end
     else if((cur_st==WAIT_ST) && ~i_efuse_vld) begin
         wait_st_req_adc_flag <= 1'b0;
     end   
-    else if(i_efuse_vld && efuse_fsm_load_done_lock && ~efuse_fsm_load_done_lock_ff) begin
+    else if((i_efuse_vld && efuse_fsm_load_done_lock && ~efuse_fsm_load_done_lock_ff) && failsafe_wait_req_adc_ff) begin
         wait_st_req_adc_flag <= 1'b1;
     end
     else if(wait_st_req_adc_done) begin
@@ -452,4 +465,6 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
 
