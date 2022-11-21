@@ -43,26 +43,41 @@ assign detect_continue  = i_vld & last_vld & (i_vld_data==last_vld_data);
 generate
     if(MODE==0) begin: MODE_EQ_0_DETECT_END
         assign detect_end = i_vld & last_vld & (i_vld_data!=last_vld_data) & (cnt>=DN_TH) & (cnt<=UP_TH);
+      
+        always_ff@(posedge i_clk or negedge i_rst_n) begin
+            if(~i_rst_n) begin
+	            cnt <= CNT_W'(0);
+	        end
+            else if(detect_end) begin
+                cnt <= CNT_W'(1);
+            end
+  	        else if(detect_start | detect_continue) begin
+	            cnt <= cnt + 1'b1;
+	        end
+            else begin
+                cnt <= CNT_W'(0);
+            end
+        end
     end
     else begin: : MODE_EQ_1_DETECT_END
         assign detect_end = i_vld & last_vld & (i_vld_data==last_vld_data) & (cnt>=DN_TH) & (cnt<=UP_TH);
+
+        always_ff@(posedge i_clk or negedge i_rst_n) begin
+            if(~i_rst_n) begin
+	            cnt <= CNT_W'(0);
+	        end
+            else if(detect_end) begin
+                cnt <= CNT_W'(0);
+            end
+  	        else if(detect_start | detect_continue) begin
+	            cnt <= cnt + 1'b1;
+	        end
+            else begin
+                cnt <= CNT_W'(0);
+            end
+        end        
     end
 endgenerate
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-	    cnt <= CNT_W'(0);
-	end
-    else if(detect_end) begin
-        cnt <= CNT_W'(0);
-    end
-  	else if(detect_start | detect_continue) begin
-	    cnt <= cnt + 1'b1;
-	end
-    else begin
-        cnt <= CNT_W'(0);
-    end
-end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
