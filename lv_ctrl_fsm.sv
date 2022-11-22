@@ -1,461 +1,345 @@
 //============================================================
-//Module   : lv_ctrl_fsm
-//Function : low voltage die, ctrl fsm
-//File Tree: lv_core
-//            |--lv_ctrl_fsm
+//Module   : lv_owt_rx_ctrl
+//Function : one wire bus req & ack. 
+//File Tree: 
 //-------------------------------------------------------------
 //Update History
 //-------------------------------------------------------------
 //Rev.level     Date          Code_by         Contents
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
-module lv_ctrl_fsm #(
+module lv_owt_rx_ctrl #(
     `include "lv_param.vh"
-    parameter END_OF_LIST          = 1
+    parameter END_OF_LIST = 1
 )( 
-    input  logic           i_power_on      ,
-    input  logic           i_test_mode     ,
-    input  logic           i_efuse_vld     ,//load efuse's data to register, come frome register.
-    input  logic           i_efuse_done    ,//come from register.	
-    input  logic           i_fsenb_n       ,//0: vld; 1: no_vld
-    input  logic           i_ow_com_err    ,//one wire bus communicate voilate protocol or crc chk err.
-    input  logic           i_ow_wdg_err    ,//one wire bus lost ack.
-    input  logic           i_spi_err       ,//spi bus communitcate voilate protocol or crc chk err.
-    input  logic           i_crc_wdg_err   ,//watch dog scan cfg register,and chk its crc.if chk result is uncorrect, generate this err.
-    input  logic           i_lv_pwm_dt_err ,//lv pwm deadtime err.
-    input  logic           i_lv_pwm_mm_err ,//lv pwm mismatch err.
-    input  logic           i_lv_vsup_uv_err,//lv voltage supply under voltage err.
-    input  logic           i_lv_vsup_ov_err,//lv voltage supply over voltage.
-    input  logic           i_hv_vcc_uv_err ,//hv voltage under voltage err.
-    input  logic           i_hv_vcc_ov_err ,//hv voltage over voltage err.
-    input  logic           i_hv_ot_err     ,//hv over temperature err.
-    input  logic           i_hv_oc_err     ,//hv over current err.
-    input  logic           i_hv_desat_err  ,
-    input  logic           i_hv_scp_err    ,//hv short circuit err.
-    input  logic           i_normal_en     ,
-    input  logic           i_cfg_en        ,
-    input  logic           i_bist_en       ,
-    input  logic           i_sft_rst       ,//software reset
-
-    output logic           o_pwm_ctrl      ,//1: enable; 0: disable
-    output logic           o_crc_wdg_ctrl  ,//1: enable; 0: disable
-    output logic           o_ow_wdg_ctrl   ,//1: enable; 0: disable
-    output logic           o_spi_ctrl      ,//1: enable; 0: disable
-    output logic           o_bist_ctrl     ,//1: enable; 0: disable
-    output logic           o_cfg_ctrl      ,//1: enable; 0: disable
-    output logic           o_ow_comm_ctrl  ,//1: enable; 0: disable
-    output logic           o_fsafe_ctrl    ,//failsafe ctrl enb
-    output logic           o_int_n         ,//interupte
-
-    output logic           o_fsm_efuse_load_en  ,
-    input  logic           i_efuse_fsm_load_done,
-
-    output logic           o_fsm_ow_ctrl_req_adc,
-    input  logic           i_ow_ctrl_fsm_ack_adc,
-    input  logic           i_ow_ctrl_fsm_ack_adc_status, //0: ow comm ok; 1: ow comm err.
-
-    input  logic           i_clk	   ,
-    input  logic           i_rst_n          //hardware reset
+    input  logic                            i_hv_lv_owt_rx ,
+    output logic                            o_owt_rx_ack   ,
+    output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_rx_cmd   ,
+    output logic [OWT_ADC_DBIT_NUM-1:   0]  o_owt_rx_data  ,
+    output logic                            o_owt_rx_status,//0: normal; 1: error.         
+    
+    input  logic                            i_clk	       ,
+    input  logic                            i_rst_n
  );
 //==================================
 //local param delcaration
 //==================================
-localparam POWER_DOWN_ST   = FSM_ST_W'(0 );
-localparam WAIT_ST         = FSM_ST_W'(1 ); 
-localparam TEST_ST         = FSM_ST_W'(2 );
-localparam NORMAL_ST       = FSM_ST_W'(3 );
-localparam FAILSAFE_ST     = FSM_ST_W'(4 );
-localparam OW_COMM_ERR_ST  = FSM_ST_W'(5 );
-localparam OW_WDG_FAULT_ST = FSM_ST_W'(6 );
-localparam FAULT_ST        = FSM_ST_W'(7 );
-localparam CFG_ST          = FSM_ST_W'(8 );
-localparam RST_ST          = FSM_ST_W'(9 );
-localparam BIST_ST         = FSM_ST_W'(10);
+
 //==================================
 //var delcaration
 //==================================
-logic                          lvhv_err0                    ;
-logic                          lvhv_err1                    ;
-logic                          lvhv_err2                    ;
-logic [FSM_ST_W-1:          0] cur_st                       ;
-logic [FSM_ST_W-1:          0] nxt_st                       ;
-logic                          fsm_efuse_load_en            ;
-logic                          efuse_fsm_load_done_lock     ;
-logic                          efuse_fsm_load_done_lock_ff  ;
-logic                          wait_st_req_adc_flag         ;
-logic                          wait_st_req_adc_flag_ff      ;
-logic                          failsafe_wait_req_adc        ;
-logic                          failsafe_wait_req_adc_ff     ;
-logic [FSM_REQ_ADC_CNT_W-1: 0] wait_st_req_adc_cnt          ;
-logic                          wait_st_req_adc_done         ;
-logic                          fault_st_pwm_ctrl_on         ;
-logic                          fault_st_pwm_ctrl_off        ;
-loigc                          cfg_st_err_on                ;
-logic                          cfg_st_err_off               ;
-logic                          all_err                      ;
+logic [OWT_FSM_ST_W-1:          0]  owt_rx_cur_st       ;
+logic [OWT_FSM_ST_W-1:          0]  owt_rx_nxt_st       ;
+logic                               rx_vld              ;
+logic                               rx_vld_data         ;
+logic                               rx_vld_lock         ;
+logic                               rx_vld_data_lock    ;
+logic                               rx_gen_mcst_code    ;
+logic                               rx_mcst_vld_zero    ;//Manchester code
+logic                               rx_mcst_vld_one     ;
+logic                               rx_mcst_invld       ;
+logic [CNT_OWT_MAX_W-1:         0]  rx_cnt_bit          ;
+logic                               rx_bit_done         ;
+logic [OWT_TAIL_BIT_NUM-1:      0]  rx_sync_tail_bit    ;
+logic [OWT_CMD_BIT_NUM-1:       0]  rx_cmd_data         ;
+logic [OWT_OWT_DBIT_NUM-1:      0]  rx_nml_data         ;
+logic [OWT_ADC_DBIT_NUM-1:      0]  rx_adc_data         ;
+logic [OWT_CRC_BIT_NUM-1:       0]  rx_crc_data         ;
+logic                               rx_cmd_rd           ;
+logic                               rx_cmd_wr           ;
+logic                               crc8_chk_vld        ;
+logic                               crc8_chk_bit        ;
+logic                               crc8_chk_start      ;
+logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc      ;
+logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc_lock ;
+logic                               owt_rx_status       ;
 //==================================
 //main code
 //==================================
-assign lvhv_err0 = i_lv_vsup_uv_err || i_lv_vsup_ov_err || i_lv_pwm_dt_err || i_lv_pwm_mm_err 
-                   || i_hv_vcc_uv_err || i_hv_vcc_ov_err || i_hv_ot_err || i_hv_oc_err || i_hv_desat_err || i_hv_scp_err;            
-assign lvhv_err1 = i_lv_vsup_uv_err || i_lv_vsup_ov_err || i_hv_vcc_uv_err || i_hv_vcc_ov_err || i_hv_ot_err || i_hv_desat_err || i_hv_scp_err;
-assign lvhv_err2 = i_lv_pwm_dt_err || i_lv_pwm_mm_err || i_hv_oc_err;
-assign all_err   = i_ow_com_err || i_ow_wdg_err || i_spi_err || i_crc_wdg_err || lvhv_err0;
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
+ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        cur_st <= POWER_DOWN_ST;
+        owt_rx_cur_st <= OWT_FSM_ST_W'(0);
     end
     else begin
-        cur_st <= nxt_st;
+        owt_rx_cur_st <= owt_rx_nxt_st;
     end
 end
 
 always_comb begin
-    case(cur_st)
-        POWER_DOWN_ST : begin 
-            if(~i_power_on) begin
-                nxt_st = POWER_DOWN_ST;
-            end
-            else begin
-                nxt_st = WAIT_ST; 
-            end
-        end
-        WAIT_ST : begin 
-            if(~i_power_on) begin
-                nxt_st = POWER_DOWN_ST;
-            end
-            else if((efuse_fsm_load_done_lock & ~i_efuse_vld & ~i_efuse_done) || i_test_mode) begin
-                nxt_st = TEST_ST;
-            end
-            else if(~i_ow_com_err && ~i_ow_wdg_err && ~i_fsenb_n) begin
-                nxt_st = FAILSAFE_ST;
-            end
-            else if(~i_ow_com_err && ~i_ow_wdg_err && i_normal_en) begin
-                nxt_st = NORMAL_ST;
+    case(owt_rx_cur_st)
+        OWT_IDLE_ST : begin 
+            if(rx_mcst_vld_zero) begin
+                owt_rx_nxt_st = OWT_SYNC_HEAD_ST;
             end
             else;
         end
-        TEST_ST : begin 
-            if(~i_power_on) begin
-                nxt_st = POWER_DOWN_ST;
+        OWT_SYNC_HEAD_ST : begin
+            if(rx_mcst_vld_zero & (rx_cnt_bit==(OWT_SYNC_BIT_NUM-2))) begin
+                owt_rx_nxt_st = OWT_SYNC_TAIL_ST;    
             end
-            else if(~i_test_mode && i_efuse_vld && i_efuse_done) begin
-                nxt_st = WAIT_ST;
+            else if(rx_mcst_vld_one | rx_mcst_invld) begin
+                owt_rx_nxt_st = OWT_IDLE_ST;
             end
-            else;    
         end
-        NORMAL_ST : begin 
-            if(~i_power_on) begin 
-                nxt_st = POWER_DOWN_ST;
-            end
-            else if(i_ow_wdg_err) begin
-                nxt_st = OW_WDG_FAULT_ST;
-            end
-            else if(i_ow_com_err) begin
-                nxt_st = OW_COMM_ERR_ST;
-            end
-            else if(i_cfg_en) begin
-                nxt_st = CFG_ST;
-            end
-            else if(~i_fsenb_n) begin
-                nxt_st = FAILSAFE_ST;
-            end
-            else if(i_spi_err || i_crc_wdg_err || lvhv_err0) begin
-                nxt_st = FAULT_ST;
+        OWT_SYNC_TAIL_ST : begin
+            if(rx_bit_done) begin
+                if(rx_sync_tail_bit==4'b1100) begin
+                    owt_rx_nxt_st = OWT_CMD_ST;
+                end
+                else begin
+                    owt_rx_nxt_st = OWT_IDLE_ST;
+                end
             end
             else;
         end
-        FAILSAFE_ST : begin 
-            if(~i_power_on) begin 
-                nxt_st = POWER_DOWN_ST;
+        OWT_CMD_ST : begin
+            if(rx_mcst_invld) begin
+                owt_rx_nxt_st = OWT_IDLE_ST;
             end
-            else if(i_ow_com_err || i_ow_wdg_err) begin
-                nxt_st = WAIT_ST;
+            else if(rx_bit_done & rx_cmd_rd & (rx_cmd_data[CMD_BIT_NUM-2: 0]==7'h1f)) begin
+                owt_rx_nxt_st = OWT_ADC_DATA_ST;
             end
-            else if(lvhv_err1) begin
-                nxt_st = FAULT_ST;
-            end
-            else if(i_fsenb_n) begin
-                nxt_st = NORMAL_ST;
+            else if(rx_bit_done) begin
+                owt_rx_nxt_st = OWT_NML_DATA_ST;
             end
             else;
         end
-        OW_COMM_ERR_ST : begin 
-            if(~i_power_on) begin 
-                nxt_st = POWER_DOWN_ST;
+        OWT_ADC_DATA_ST : begin
+            if(rx_mcst_invld) begin
+                owt_rx_nxt_st = OWT_IDLE_ST;
             end
-            else if(i_sft_rst || ~i_ow_com_err) begin
-                nxt_st = NORMAL_ST;
-            end
-            else;
-        end
-        OW_WDG_FAULT_ST : begin 
-            if(~i_power_on) begin
-                nxt_st = POWER_DOWN_ST;
-            end
-            else if(i_sft_rst || ~i_ow_wdg_err) begin
-                nxt_st = NORMAL_ST;
+            else if(rx_bit_done) begin
+                owt_rx_nxt_st = OWT_CRC_ST;
             end
             else;
         end
-        FAULT_ST : begin 
-            if(~i_power_on) begin 
-                nxt_st = POWER_DOWN_ST;
+        OWT_NML_DATA_ST : begin
+            if(rx_mcst_invld) begin
+                owt_rx_nxt_st = OWT_IDLE_ST;
             end
-            else if(i_cfg_en) begin
-                nxt_st = CFG_ST;
+            else if(rx_bit_done) begin
+                owt_rx_nxt_st = OWT_CRC_ST;
             end
-            else if(~lvhv_err0 && ~i_fsenb_n) begin
-                nxt_st = FAILSAFE_ST;
+            else;       
+        end
+        OWT_VLD_DATA_TAIL_ST : begin
+            if(rx_bit_done) begin
+                owt_rx_nxt_st = OWT_IDLE_ST;
             end
             else;
         end
-        CFG_ST : begin 
-            if(~i_power_on) begin
-                nxt_st = POWER_DOWN_ST;
-            end
-            else if(~all_err && ~i_cfg_en &&  i_fsenb_n) begin
-                nxt_st = NORMAL_ST;
-            end
-            else if(~all_err && ~i_cfg_en && ~i_fsenb_n) begin
-                nxt_st = FAILSAFE_ST;
-            end
-        end
-        RST_ST         :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
-        BIST_ST        :  begin nxt_st = ~i_power_on ? POWER_DOWN_ST : ;end
     endcase
 end
 
-//====WAIT_ST FLOW========
-assign fsm_efuse_load_en = (cur_st==POWER_DOWN_ST) && (nxt_st==WAIT_ST) && ~i_efuse_vld;
+signal_detect #(
+    .CNT_W(CNT_OWT_EXT_CYC_W    ),
+    .DN_TH(OWT_EXT_CYC_NUM-1    ),
+    .UP_TH(OWT_EXT_CYC_NUM      ),
+    .MODE (1                    )
+) U_OWT_RX_SIGNAL_DETECT(
+    .i_vld        (i_hv_lv_owt_rx),
+    .i_vld_data   (i_hv_lv_owt_rx),
+    .o_vld        (rx_vld        ),
+    .o_vld_data   (rx_vld_data   ),
+    .i_clk        (i_clk         ),
+    .i_rst_n      (i_rst_n       )
+);
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_fsm_efuse_load_en <= 1'b0;
+        rx_vld_lock       <= 1'b0;
+        rx_vld_data_lock  <= 1'b0;
     end
     else begin
-        o_fsm_efuse_load_en <= fsm_efuse_load_en;
+        rx_vld_lcok       <= rx_vld ? 1'b1        : rx_vld_lock     ;
+        rx_vld_data_lock  <= rx_vld ? rx_vld_data : rx_vld_data_lock;
     end
-end	
+end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        efuse_fsm_load_done_lock <= 1'b0;
-    end    
-    else if(fsm_efuse_load_en) begin
-        efuse_fsm_load_done_lock <= 1'b0;
+        rx_gen_mcst_code <= 1'b0;
     end
-    else if(i_efuse_fsm_load_done) begin
-        efuse_fsm_load_done_lock <= 1'b1;
+    else if(owt_rx_cur_st==IDLE_ST) begin
+        rx_gen_mcst_code <= rx_vld ? ~rx_gen_mcst_code : rx_gen_mcst_code;
+    end
+    else begin
+        rx_gen_mcst_code <= 1'b0;
+    end
+end
+
+assign rx_mcst_vld_one  = rx_vld & rx_vld_lock &  rx_vld_data & ~rx_vld_data_lock & rx_gen_mcst_code; //posedge 0->1
+assign rx_mcst_vld_zero = rx_vld & rx_vld_lock & ~rx_vld_data &  rx_vld_data_lock & rx_gen_mcst_code; //negedge 1->0
+assign rx_mcst_invld    = rx_vld & rx_vld_lock & ~(rx_vld_data ^ rx_vld_data_lock)& rx_gen_mcst_code;
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        rx_sync_tail_bit[OWT_TAIL_BIT_NUM-1: 0] <= {OWT_TAIL_BIT_NUM{1'b0}};
+    end
+    else if(rx_vld & ((owt_rx_cur_st==OWT_SYNC_TAIL_ST) | (owt_rx_cur_st==OWT_VLD_DATA_TAIL_ST))) begin
+        rx_sync_tail_bit[OWT_TAIL_BIT_NUM-1: 0] <= {rx_sync_tail_bit[OWT_TAIL_BIT_NUM-2: 0], rx_vld_data}; 
     end
     else;
 end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        efuse_fsm_load_done_lock_ff <= 1'b0;
-    end    
-    else begin
-        efuse_fsm_load_done_lock_ff <= efuse_fsm_load_done_lock;
+        rx_cmd_data[OWT_CMD_BIT_NUM-1: 0] <= {OWT_CMD_BIT_NUM{1'b0}};
     end
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & (owt_rx_cur_st==OWT_CMD_ST)) begin
+        rx_cmd_data[OWT_CMD_BIT_NUM-1: 0] <= {rx_cmd_data[OWT_CMD_BIT_NUM-2: 0], (~rx_mcst_vld_zero | rx_mcst_vld_one)}; 
+    end
+    else;
 end
+
+assign rx_cmd_rd = ~rx_cmd_data[OWT_CMD_BIT_NUM-1];
+assign rx_cmd_wr =  rx_cmd_data[OWT_CMD_BIT_NUM-1];
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        failsafe_wait_req_adc    <= 1'b0;
-        failsafe_wait_req_adc_ff <= 1'b0;   
+        rx_adc_data[OWT_ADC_DBIT_NUM-1: 0] <= {OWT_ADC_DBIT_NUM{1'b0}};
     end
-    else begin
-        failsafe_wait_req_adc    <= (cur_st==FAILSAFE_ST) && (nxt_st==WAIT_ST);
-        failsafe_wait_req_adc_ff <= failsafe_wait_req_adc;
-    end    
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & ((owt_rx_cur_st==OWT_ADC_DATA_ST) | (owt_rx_cur_st==OWT_NML_DATA_ST))) begin
+        rx_adc_data[OWT_ADC_DBIT_NUM-1: 0] <= {rx_adc_data[OWT_ADC_DBIT_NUM-2: 0], (~rx_mcst_vld_zero | rx_mcst_vld_one)}; 
+    end
+    else;
 end
 
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        wait_st_req_adc_flag <= 1'b0;
-    end
-    else if((cur_st==WAIT_ST) && ~i_efuse_vld) begin
-        wait_st_req_adc_flag <= 1'b0;
-    end   
-    else if((i_efuse_vld && efuse_fsm_load_done_lock && ~efuse_fsm_load_done_lock_ff) && failsafe_wait_req_adc_ff) begin
-        wait_st_req_adc_flag <= 1'b1;
-    end
-    else if(wait_st_req_adc_done) begin
-        wait_st_req_adc_flag <= 1'b0;
+assign rx_nml_data = rx_adc_data[OWT_DBIT_NUM-1: 0];
+
+assign crc8_chk_vld     = ((owt_rx_cur_st==OWT_CMD_ST) | (owt_rx_cur_st==OWT_ADC_DATA_ST) | (owt_rx_cur_st==OWT_NML_DATA_ST)) & (rx_mcst_vld_one | rx_mcst_vld_zero);
+assign crc8_chk_bit     = (~rx_mcst_vld_zero | rx_mcst_vld_one);
+assign crc8_chk_start   = (owt_rx_cur_st==OWT_CMD_ST) & (rx_cnt_bit==CNT_MAX_W'(0)) & (rx_mcst_vld_one | rx_mcst_vld_zero);
+
+crc8_serial #(
+    .CNT_W($clog2(OWT_ADC_DBIT_NUM+OWT_CMD_BIT_NUM))
+) U_CRC8_CHK(
+    .i_vld             (crc8_chk_vld        ),
+    .i_data            (crc8_chk_bit        ),
+    .i_new_calc        (crc8_chk_start      ),
+    .o_vld_crc         (crc8_chk_o_crc      ),
+    .i_clk	           (i_clk               ),
+    .i_rst_n           (i_rst_n             )
+);
+
+always_ff@(posedge i_clk) begin
+    if(rx_bit_done & ((owt_rx_cur_st==OWT_ADC_DATA_ST) | (owt_rx_cur_st==OWT_NML_DATA_ST))) begin
+        crc8_chk_o_crc_lock <= crc8_chk_o_crc;
     end
     else;
 end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        wait_st_req_adc_flag_ff <= 1'b0;
-    end    
+        rx_crc_data[OWT_CRC_BIT_NUM-1: 0] <= {OWT_CRC_BIT_NUM{1'b0}};
+    end
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & (owt_rx_cur_st==OWT_CRC_ST)) begin
+        rx_crc_data[OWT_CRC_BIT_NUM-1: 0] <= {rx_crc_data[OWT_CRC_BIT_NUM-2: 0], (~rx_mcst_vld_zero | rx_mcst_vld_one)}; 
+    end
+    else;
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        rx_bit_done <= 1'b0;
+    end
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & (owt_rx_cur_st==OWT_SYNC_HEAD_ST) & (rx_cnt_bit==(OWT_SYNC_BIT_NUM-2))) begin
+        rx_bit_done <= 1'b1;
+    end
+    else if(rx_vld & (owt_rx_cur_st==OWT_SYNC_TAIL_ST) & (rx_cnt_bit==(OWT_TAIL_BIT_NUM-1))) begin
+        rx_bit_done <= 1'b1;
+    end
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & (owt_rx_cur_st==OWT_CMD_ST) & (rx_cnt_bit==(OWT_CMD_BIT_NUM-1))) begin
+        rx_bit_done <= 1'b1;
+    end
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & (owt_rx_cur_st==OWT_ADC_DATA_ST) & (rx_cnt_bit==(OWT_ADC_DBIT_NUM-1))) begin
+        rx_bit_done <= 1'b1;
+    end
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & (owt_rx_cur_st==OWT_NML_DATA_ST) & (rx_cnt_bit==(OWT_DBIT_NUM-1))) begin
+        rx_bit_done <= 1'b1;
+    end
+    else if((rx_mcst_vld_one | rx_mcst_vld_zero) & (owt_rx_cur_st==OWT_CRC_ST) & (rx_cnt_bit==(OWT_CRC_BIT_NUM-1))) begin
+        rx_bit_done <= 1'b1;
+    end
+    else if(rx_vld & (owt_rx_cur_st==OWT_VLD_DATA_TAIL_ST) & (rx_cnt_bit==(OWT_TAIL_BIT_NUM-1))) begin
+        rx_bit_done <= 1'b1;
+    end
     else begin
-        wait_st_req_adc_flag_ff <= wait_st_req_adc_flag;
+        rx_bit_done <= 1'b0;
     end
 end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_fsm_ow_ctrl_req_adc <= 1'b0;
-    end    
-    else begin
-        o_fsm_ow_ctrl_req_adc <= (wait_st_req_adc_flag && ~wait_st_req_adc_flag_ff) || (i_ow_ctrl_fsm_ack_adc && ~wait_st_req_adc_done);
+        rx_cnt_bit <= CNT_MAX_W'(0);
     end
-end
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        wait_st_req_adc_cnt <= FSM_REQ_ADC_CNT_W'(0);
-    end
-    else if((cur_st==WAIT_ST) && ~i_efuse_vld) begin
-        wait_st_req_adc_cnt <= FSM_REQ_ADC_CNT_W'(0);
-    end    
-    else if((cur_st==WAIT_ST) && i_efuse_vld) begin 
-        if(i_ow_ctrl_fsm_ack_adc && ~i_ow_ctrl_fsm_ack_adc_status) begin
-            wait_st_req_adc_cnt <= (wait_st_req_adc_cnt==(FSM_REQ_ADC_NUM-1)) ? FSM_REQ_ADC_CNT_W'(0) : (wait_st_req_adc_cnt+1'b1);
+    else if(owt_rx_cur_st==OWT_SYNC_HEAD_ST) begin
+        if(rx_mcst_vld_zero) begin
+            rx_cnt_bit <= (rx_cnt_bit==(OWT_SYNC_BIT_NUM-2)) ? CNT_MAX_W'(0) : (rx_cnt_bit+1'b1);
         end
         else;
     end
-    else;
-end
-
-assign wait_st_req_adc_done = (wait_st_req_adc_cnt==(FSM_REQ_ADC_NUM-1)) && i_ow_ctrl_fsm_ack_adc && ~i_ow_ctrl_fsm_ack_adc_status;
-//======End of WAIT_ST FLOW======
-
-//======================output ctrl signal=============
-assign fault_st_pwm_ctrl_on = (cur_st==FAILSAFE_ST) &&  (i_spi_err || i_lv_pwm_dt_err || i_lv_pwm_mm_err);
-assign fault_st_pwm_ctrl_off= (cur_st==FAILSAFE_ST) && ~(i_spi_err || i_lv_pwm_dt_err || i_lv_pwm_mm_err); 
-assign cfg_st_err_on        = (cur_st==CFG_ST) &&  all_err;
-assign cfg_st_err_off       = (cur_st==CFG_ST) && ~all_err;
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_pwm_ctrl <= 1'b0;
+    else if(owt_rx_cur_st==OWT_SYNC_TAIL_ST) begin
+        if(rx_vld) begin
+            rx_cnt_bit <= (rx_cnt_bit==(OWT_TAIL_BIT_NUM-1)) ? CNT_MAX_W'(0) : (rx_cnt_bit+1'b1);   
+        end
+        else;
     end
-    else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || fault_st_pwm_ctrl_off || (cur_st==CFG_ST)) begin
-        o_pwm_ctrl <= 1'b0;
+    else if(owt_rx_cur_st==OWT_CMD_ST) begin
+        if(rx_mcst_vld_one | rx_mcst_vld_zero) begin
+            rx_cnt_bit <= (rx_cnt_bit==(OWT_CMD_BIT_NUM-1)) ? CNT_MAX_W'(0) : (rx_cnt_bit+1'b1); 
+        end
+        else;
     end
-    else if((cur_st==NORMAL_ST) || fault_st_pwm_ctrl_on) begin
-        o_pwm_ctrl <= 1'b1;
+    else if(owt_rx_cur_st==OWT_ADC_DATA_ST) begin
+        if(rx_mcst_vld_one | rx_mcst_vld_zero) begin
+            rx_cnt_bit <= (rx_cnt_bit==(OWT_ADC_DBIT_NUM-1)) ? CNT_MAX_W'(0) : (rx_cnt_bit+1'b1); 
+        end
+        else;
     end
-    else;
-end
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_crc_wdg_ctrl <= 1'b0;
+    else if(owt_rx_cur_st==OWT_NML_DATA_ST) begin
+        if(rx_mcst_vld_one | rx_mcst_vld_zero) begin
+            rx_cnt_bit <= (rx_cnt_bit==(OWT_OWT_DBIT_NUM-1)) ? CNT_MAX_W'(0) : (rx_cnt_bit+1'b1); 
+        end
+        else;
     end
-    else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==OW_WDG_FAULT_ST)
-            || (cur_st==CFG_ST)) begin
-        o_crc_wdg_ctrl <= 1'b0;
+    else if(owt_rx_cur_st==OWT_CRC_ST) begin
+        if(rx_mcst_vld_one | rx_mcst_vld_zero) begin
+            rx_cnt_bit <= (rx_cnt_bit==(OWT_CRC_BIT_NUM-1)) ? CNT_MAX_W'(0) : (rx_cnt_bit+1'b1); 
+        end
+        else;
     end
-    else if((cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST) || (cur_st==FAULT_ST)) begin
-        o_crc_wdg_ctrl <= 1'b1;
+    else if(owt_rx_cur_st==OWT_VLD_DATA_TAIL_ST) begin
+        if(rx_vld) begin
+            rx_cnt_bit <= (rx_cnt_bit==(OWT_TAIL_BIT_NUM-1)) ? CNT_MAX_W'(0) : (rx_cnt_bit+1'b1); 
+        end
+        else;
     end
-    else;
-end
-   
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_ow_wdg_ctrl <= 1'b0;
+    else begin
+        rx_cnt_bit <= CNT_MAX_W'(0);
     end
-    else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==OW_WDG_FAULT_ST)
-            || (cur_st==CFG_ST)) begin
-        o_ow_wdg_ctrl <= 1'b0;
-    end
-    else if((cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST) || (cur_st==FAULT_ST)) begin
-        o_ow_wdg_ctrl <= 1'b1;
-    end
-    else;
-end	
- 
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_spi_ctrl <= 1'b0;
-    end
-    else if(cur_st==POWER_DOWN_ST) begin
-        o_spi_ctrl <= 1'b0;
-    end
-    else if((cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-        || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
-        o_spi_ctrl <= 1'b1;
-    end
-    else;
-end
- 
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_bist_ctrl <= 1'b0;
-    end
-    else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
-        o_bist_ctrl <= 1'b0;
-    end
-    else if(cur_st==BIST_ST) begin
-        o_bist_ctrl <= 1'b1;
-    end
-    else;
-end
-  
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_cfg_ctrl <= 1'b0;
-    end
-    else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST)) begin
-        o_cfg_ctrl <= 1'b0;
-    end
-    else if((cur_st==TEST_ST) || (cur_st==CFG_ST)) begin
-        o_cfg_ctrl <= 1'b1;
-    end
-    else;
-end
-  
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_ow_comm_ctrl <= 1'b0;
-    end
-    else if(cur_st==POWER_DOWN_ST) begin
-        o_ow_comm_ctrl <= 1'b0;
-    end
-    else if((cur_st==WAIT_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
-        o_ow_comm_ctrl <= 1'b1;
-    end
-    else;
-end
-   
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_fsafe_ctrl <= 1'b0;
-    end
-    else if((cur_st==POWER_DOWN_ST) || (cur_st==WAIT_ST) || (cur_st==NORMAL_ST) || (cur_st==OW_COMM_ERR_ST)
-            || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || (cur_st==CFG_ST)) begin
-        o_fsafe_ctrl <= 1'b0;
-    end
-    else if(cur_st==FAILSAFE_ST) begin
-        o_fsafe_ctrl <= 1'b1;
-    end
-    else;
 end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_int_n <= 1'b1;
+        o_owt_rx_ack <= 1'b0;
     end
-    else if((cur_st==POWER_DOWN_ST) || (cur_st==TEST_ST) || (cur_st==NORMAL_ST) || (cur_st==FAILSAFE_ST) || cfg_st_err_off) begin
-        o_int_n <= 1'b1;
+    else begin
+        o_owt_rx_ack <= (owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_nxt_st==OWT_IDLE_ST);
     end
-    else if((cur_st==WAIT_ST) || (cur_st==OW_COMM_ERR_ST) || (cur_st==OW_WDG_FAULT_ST) || (cur_st==FAULT_ST) || cfg_st_err_on) begin
-        o_int_n <= 1'b0;
-    end
-    else;
 end
 
+assign owt_rx_status = (((owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_cur_st != OWT_VLD_DATA_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
+                        (((rx_sync_tail_bit != 4'b1100) & (owt_rx_cur_st == OWT_VLD_DATA_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST));
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_owt_rx_status <= 1'b0;
+    end
+    else begin
+        o_owt_rx_status <= owt_rx_status;
+    end
+end
 // synopsys translate_off    
 //==================================
 //assertion
@@ -465,6 +349,5 @@ end
 `endif
 // synopsys translate_on    
 endmodule
-
 
 
