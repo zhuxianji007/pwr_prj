@@ -41,7 +41,7 @@ logic               last_vld_data   ;
 assign detect_start     = i_vld & (cnt==CNT_W'(0));
 assign detect_continue  = i_vld & last_vld & (i_vld_data==last_vld_data);
 generate
-    if(MODE==0) begin: MODE_EQ_0_DETECT_END
+    if(MODE==0) begin: PWM_MODE
         assign detect_end = i_vld & last_vld & (i_vld_data!=last_vld_data) & (cnt>=DN_TH) & (cnt<=UP_TH);
       
         always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -59,8 +59,8 @@ generate
             end
         end
     end
-    else begin: : MODE_EQ_1_DETECT_END
-        assign detect_end = i_vld & last_vld & (i_vld_data==last_vld_data) & (cnt>=DN_TH) & (cnt<=UP_TH);
+    else begin: : OWT_MODE
+        assign detect_end = i_vld & last_vld & (i_vld_data==last_vld_data) & (cnt>=DN_TH) & (cnt<UP_TH);
 
         always_ff@(posedge i_clk or negedge i_rst_n) begin
             if(~i_rst_n) begin
