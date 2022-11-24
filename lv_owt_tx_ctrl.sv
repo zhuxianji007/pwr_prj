@@ -17,8 +17,8 @@ module lv_owt_tx_ctrl #(
     input  logic [REG_AW-1:             0]  i_spi_owt_addr ,
     input  logic [REG_DW-1:             0]  i_spi_owt_wdata,
     
-    input  logic                            i_wdg_owt_req_adc,
-    output logic                            o_owt_wdg_ack_adc,
+    input  logic                            i_wdg_owt_adc_req,
+    output logic                            o_owt_wdg_adc_ack,
 
     output logic                            o_lv_hv_owt_tx , 
 
@@ -33,10 +33,22 @@ module lv_owt_tx_ctrl #(
 //==================================
 //local param delcaration
 //==================================
-
+localparam RD_OP    = 1'b0; //OP==OPERATION
+localparam WR_OP    = 1'b1; 
 //==================================
 //var delcaration
 //==================================
+logic                               spi_owt_wen_lock    ;
+logic                               spi_owt_ren_lock    ;
+logic [REG_AW-1:                0]  spi_owt_addr_lock   ;
+logic [REG_DW-1:                0]  spi_owt_wdata_lock  ;
+logic                               spi_owt_rw_flag     ;//0: read; 1: write.
+logic                               spi_owt_req         ;
+logic                               spi_owt_req_ff      ;
+logic                               wdg_owt_adc_req_ff  ;
+logic                               owt_spi_grant       ;
+logic                               owt_wdg_grant       ;
+logic                               owt_spi_ack         ;
 logic [OWT_FSM_ST_W-1:          0]  owt_tx_cur_st       ;
 logic [OWT_FSM_ST_W-1:          0]  owt_tx_nxt_st       ;
 logic                               tx_vld              ;
@@ -61,10 +73,114 @@ logic                               crc8_gen_start      ;
 logic [OWT_CRC_BIT_NUM-1:       0]  crc8_gen_o_crc      ;
 logic [OWT_CRC_BIT_NUM-1:       0]  crc8_gen_o_crc_lock ;
 logic                               owt_tx_start        ;
-logic                               owt_tx_abnormal     ;
+logic                               owt_tx_terminate    ;
+logic                               cur_tx_is_wdg_radc  ;
+logic                               cur_tx_is_spi_req   ;
 //==================================
 //main code
 //==================================
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        spi_owt_wen_lock <= 1'b0;
+        spi_owt_ren_lock <= 1'b0;
+    end
+    else begin
+        spi_owt_wen_lock <= owt_spi_grant ? 1'b0 : (i_spi_owt_wen ? 1'b1 : spi_owt_wen_lock);
+        spi_owt_ren_lock <= owt_spi_grant ? 1'b0 : (i_spi_owt_ren ? 1'b1 : spi_owt_ren_lock);
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        spi_owt_addr_lock <= REG_AW'(0);
+        spi_owt_rw_flag   <= RD_OP;
+    end
+    else if(i_spi_owt_wen | i_spi_owt_ren) begin
+        spi_owt_addr_lock <= i_spi_owt_addr;
+        spi_owt_rw_flag   <= i_spi_owt_ren ? RD_OP : WR_OP;   
+    end
+    else;
+end
+
+assgin tx_cmd_data = cur_tx_is_spi_req ? {spi_owt_rw_flag, spi_owt_addr_lock} : {RD_OP,REQ_ADC_ADDR};
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        spi_owt_wdata_lock <= REG_DW'(0);
+    end
+    else if(i_spi_owt_wen) begin
+        spi_owt_wdata_lock <= i_spi_owt_wdata;   
+    end
+    else;
+end
+
+assign spi_owt_req = (i_spi_owt_wen | spi_owt_wen_lock) | (i_spi_owt_ren | spi_owt_ren_lock);
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        spi_owt_req_ff <= 1'b0;
+    end
+    else begin
+        spi_owt_req_ff <= spi_owt_req;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        wdg_owt_adc_req_ff <= 1'b0;
+    end
+    else begin
+        wdg_owt_adc_req_ff <= i_wdg_owt_adc_req;
+    end
+end
+
+assign owt_tx_terminate = (cur_tx_is_wdg_radc==1'b1) & spi_owt_req & ~spi_owt_req_ff;
+
+assign owt_spi_grant = (~cur_tx_is_wdg_radc & ~cur_tx_is_spi_req & spi_owt_req & ~spi_owt_req_ff) | 
+                       (cur_tx_is_wdg_radc & spi_owt_req & (owt_tx_nxt_st==OWT_IDLE_ST)) |
+                       (cur_tx_is_spi_req & (owt_tx_cur_st!=OWT_IDLE_ST) & (owt_tx_nxt_st==OWT_IDLE_ST) & spi_owt_req);
+
+assign owt_wdg_grant = (~cur_tx_is_wdg_radc & ~cur_tx_is_spi_req & i_wdg_owt_adc_req & ~spi_owt_req) |
+                       (cur_tx_is_wdg_radc & i_wdg_owt_adc_req & ~spi_owt_req & (owt_tx_cur_st!=OWT_IDLE_ST) & (owt_tx_nxt_st==OWT_IDLE_ST));
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        owt_tx_start <= 1'b0;
+    end
+    else begin
+        owt_tx_start <= owt_spi_grant | owt_wdg_grant;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_owt_wdg_adc_ack <= 1'b0;
+    end
+    else begin
+        o_owt_wdg_adc_ack <= owt_wdg_grant;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        cur_tx_is_wdg_radc <= 1'b0;
+        cur_tx_is_spi_req  <= 1'b0;
+    end
+    else if(owt_wdg_grant) begin
+        cur_tx_is_wdg_radc <= 1'b1;
+        cur_tx_is_spi_req  <= 1'b0;
+    end
+    else if(owt_spi_grant) begin
+        cur_tx_is_wdg_radc <= 1'b0;
+        cur_tx_is_spi_req  <= 1'b1;   
+    end
+    else if((owt_tx_cur_st!=OWT_IDLE_ST) & (owt_tx_nxt_st==OWT_IDLE_ST)) begin
+        cur_tx_is_wdg_radc <= 1'b0;
+        cur_tx_is_spi_req  <= 1'b0;     
+    end
+    else;
+end
+
  always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         owt_tx_cur_st <= OWT_FSM_ST_W'(0);
@@ -83,8 +199,8 @@ always_comb begin
             else;
         end
         OWT_SYNC_HEAD_ST : begin
-            if(owt_tx_abnormal) begin
-                owt_tx_nxt_st = OWT_VLD_DATA_TAIL_ST;
+            if(owt_tx_terminate) begin
+                owt_tx_nxt_st = OWT_ABNORMAL_ST;
             end
             else if(tx_bit_done) begin
                 owt_tx_nxt_st = OWT_SYNC_TAIL_ST;    
@@ -92,8 +208,8 @@ always_comb begin
             else;
         end
         OWT_SYNC_TAIL_ST : begin
-            if(owt_tx_abnormal) begin
-                owt_tx_nxt_st = OWT_VLD_DATA_TAIL_ST;
+            if(owt_tx_terminate) begin
+                owt_tx_nxt_st = OWT_ABNORMAL_ST;
             end
             else if(tx_bit_done) begin
                 owt_tx_nxt_st = OWT_CMD_ST;
@@ -101,8 +217,8 @@ always_comb begin
             else;
         end
         OWT_CMD_ST : begin
-            if(owt_tx_abnormal) begin
-                owt_tx_nxt_st = OWT_VLD_DATA_TAIL_ST;
+            if(owt_tx_terminate) begin
+                owt_tx_nxt_st = OWT_ABNORMAL_ST;
             end
             else if(tx_bit_done) begin
                 owt_tx_nxt_st = OWT_NML_DATA_ST;
@@ -110,8 +226,8 @@ always_comb begin
             else;
         end
         OWT_NML_DATA_ST : begin
-            if(owt_tx_abnormal) begin
-                owt_tx_nxt_st = OWT_VLD_DATA_TAIL_ST;
+            if(owt_tx_terminate) begin
+                owt_tx_nxt_st = OWT_ABNORMAL_ST;
             end
             else if(tx_bit_done) begin
                 owt_tx_nxt_st = OWT_CRC_ST;
@@ -119,8 +235,8 @@ always_comb begin
             else;       
         end
         OWT_CRC_ST : begin
-            if(owt_tx_abnormal) begin
-                owt_tx_nxt_st = OWT_VLD_DATA_TAIL_ST;
+            if(owt_tx_terminate) begin
+                owt_tx_nxt_st = OWT_ABNORMAL_ST;
             end
             else if(tx_bit_done) begin
                 owt_tx_nxt_st = OWT_VLD_DATA_TAIL_ST;
@@ -128,6 +244,15 @@ always_comb begin
             else;       
         end
         OWT_VLD_DATA_TAIL_ST : begin
+            if(owt_tx_terminate) begin
+                owt_tx_nxt_st = OWT_ABNORMAL_ST;
+            end
+            else if(tx_bit_done) begin
+                owt_tx_nxt_st = OWT_IDLE_ST;
+            end
+            else;
+        end
+        OWT_ABNORMAL_ST : begin
             if(tx_bit_done) begin
                 owt_tx_nxt_st = OWT_IDLE_ST;
             end
@@ -263,6 +388,9 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else if(tx_vld & (owt_tx_cur_st==OWT_VLD_DATA_TAIL_ST) & (tx_cnt_bit==(OWT_TAIL_BIT_NUM-1))) begin
         tx_bit_done <= 1'b1;
     end
+    else if(tx_vld & (owt_tx_cur_st==OWT_ABNORMAL_ST) & (tx_cnt_bit==(OWT_ABNORMAL_BIT_NUM-1))) begin
+        tx_bit_done <= 1'b1;
+    end
     else begin
         tx_bit_done <= 1'b0;
     end
@@ -305,6 +433,12 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else if(owt_tx_cur_st==OWT_VLD_DATA_TAIL_ST) begin
         if(tx_vld) begin
             tx_cnt_bit <= (tx_cnt_bit==(OWT_TAIL_BIT_NUM-1)) ? CNT_MAX_W'(0) : (tx_cnt_bit+1'b1); 
+        end
+        else;
+    end
+    else if(owt_tx_cur_st==OWT_ABNORMAL_ST) begin
+        if(tx_vld) begin
+            tx_cnt_bit <= (tx_cnt_bit==(OWT_ABNORMAL_BIT_NUM-1)) ? CNT_MAX_W'(0) : (tx_cnt_bit+1'b1); 
         end
         else;
     end
