@@ -222,9 +222,7 @@ assign crc8_chk_vld     = ((owt_rx_cur_st==OWT_CMD_ST) | (owt_rx_cur_st==OWT_ADC
 assign crc8_chk_bit     = (~rx_mcst_vld_zero | rx_mcst_vld_one);
 assign crc8_chk_start   = (owt_rx_cur_st==OWT_CMD_ST) & (rx_cnt_bit==CNT_MAX_W'(0)) & (rx_mcst_vld_one | rx_mcst_vld_zero);
 
-crc8_serial #(
-    .CNT_W($clog2(OWT_CMD_BIT_NUM+OWT_ADCD_BIT_NUM))
-) U_CRC8_CHK(
+crc8_serial U_CRC8_CHK(
     .i_vld             (crc8_chk_vld        ),
     .i_data            (crc8_chk_bit        ),
     .i_new_calc        (crc8_chk_start      ),
