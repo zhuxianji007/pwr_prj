@@ -9,7 +9,6 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module crc8_serial #(
-    parameter CNT_W                = 5,
     parameter END_OF_LIST          = 1
 )( 
     input  logic                i_vld                   ,
