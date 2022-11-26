@@ -270,9 +270,7 @@ assign crc8_gen_i_vld     = ((owt_tx_cur_st==OWT_CMD_ST) | (owt_tx_cur_st==OWT_N
 assign crc8_gen_i_vld_bit = tx_vld_bit;
 assign crc8_gen_i_start   = (owt_tx_cur_st==OWT_CMD_ST) & (tx_cnt_bit==CNT_MAX_W'(0)) & tx_mcst_vld;
                      
-crc8_serial #(
-    .CNT_W($clog2(OWT_CMD_BIT_NUM+OWT_DATA_BIT_NUM))
-) U_CRC8_GEN(
+crc8_serial U_CRC8_GEN(
     .i_vld             (crc8_gen_i_vld     ),
     .i_data            (crc8_gen_i_vld_bit ),
     .i_new_calc        (crc8_gen_i_start   ),
