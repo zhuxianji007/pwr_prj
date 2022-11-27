@@ -13,7 +13,7 @@ module spi_slv #(
     parameter END_OF_LIST          = 1
 )( 
     input  logic                i_spi_sclk      ,
-    input  logic                i_spi_csb_n     ,
+    input  logic                i_spi_csb       ,
     input  logic                i_spi_mosi      ,
     output logic                o_spi_miso      ,
 
@@ -60,8 +60,8 @@ logic                            spi_mismatch_err   ;
 //==================================
 //main code
 //==================================
-always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
-    if(i_spi_csb_n) begin
+always_ff@(posedge i_spi_sclk or posedge i_spi_csb) begin
+    if(i_spi_csb) begin
         spi_rx_bit_cnt <= SPI_RX_BIT_CNT_W'(0);
     end
     else begin
@@ -69,8 +69,8 @@ always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
     end
 end
 
-always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
-    if(i_spi_csb_n) begin
+always_ff@(posedge i_spi_sclk or posedge i_spi_csb) begin
+    if(i_spi_csb) begin
         spi_rx_done <= 1'b0;
     end
     else if(spi_rx_bit_cnt==(SPI_RX_BIT_NUM-1)) begin
@@ -79,8 +79,8 @@ always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
     else;
 end
 
-always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
-    if(i_spi_csb_n) begin
+always_ff@(posedge i_spi_sclk or posedge i_spi_csb) begin
+    if(i_spi_csb) begin
         spi_rx_cmd <= SPI_RX_CMD_BIT_NUM'(0);
     end
     else if(spi_rx_bit_cnt<SPI_RX_CMD_BIT_NUM) begin
@@ -89,8 +89,8 @@ always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
     else;
 end
 
-always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
-    if(i_spi_csb_n) begin
+always_ff@(posedge i_spi_sclk or posedge i_spi_csb) begin
+    if(i_spi_csb) begin
         spi_rx_data <= SPI_RX_DATA_BIT_NUM'(0);
     end
     else if((spi_rx_bit_cnt<SPI_RX_CRC_START_CNT) & (spi_rx_bit_cnt>=SPI_RX_CMD_BIT_NUM)) begin
@@ -99,8 +99,8 @@ always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
     else;
 end
 
-always_ff@(posedge i_spi_sclk or posedge i_spi_csb_n) begin
-    if(i_spi_csb_n) begin
+always_ff@(posedge i_spi_sclk or posedge i_spi_csb) begin
+    if(i_spi_csb) begin
         spi_rx_crc <= SPI_RX_CRC_BIT_NUM'(0);
     end
     else if((spi_rx_bit_cnt<SPI_RX_BIT_NUM) & (spi_rx_bit_cnt>=SPI_RX_CRC_START_CNT)) begin
@@ -133,3 +133,4 @@ assign spi_crc_err = (spi_rx_crc!=crc8_gen_o_crc_bit);
 `endif
 // synopsys translate_on    
 endmodule
+
