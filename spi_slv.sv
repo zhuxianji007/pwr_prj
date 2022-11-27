@@ -13,7 +13,7 @@ module spi_slv #(
     parameter END_OF_LIST          = 1
 )( 
     input  logic                i_spi_sclk      ,
-    input  logic                i_spi_csb       ,
+    input  logic                i_spi_csb       ,//low active, hig==rst
     input  logic                i_spi_mosi      ,
     output logic                o_spi_miso      ,
 
