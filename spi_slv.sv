@@ -17,6 +17,8 @@ module spi_slv #(
     input  logic                i_spi_mosi      ,
     output logic                o_spi_miso      ,
 
+    input  logic                i_spi_slv_en    ,
+
     output logic                o_spi_reg_wen   ,
     output logic                o_spi_reg_ren   ,
     output logic [REG_AW-1: 0]  o_spi_reg_addr  ,
@@ -55,7 +57,7 @@ logic                            lanch_spi_access   ;
 logic [SPI_RX_CMD_BIT_NUM-1:  0] spi_rx_cmd         ;
 logic [SPI_RX_DATA_BIT_NUM-1: 0] spi_rx_data        ;
 logic [SPI_RX_CRC_BIT_NUM-1:  0] spi_rx_crc         ;
-logic [2*SPI_RX_BIT_NUM-1:    0] slv_rsp_data       ;
+logic [2*SPI_RX_BIT_NUM-1:    0] reg_rsp_data       ;
 logic [2*SPI_RX_BIT_NUM-1:    0] crc_data_in        ;
 logic [SPI_RX_CRC_BIT_NUM-1:  0] crc_out            ;
 logic                            spi_crc_err        ;
@@ -66,6 +68,7 @@ logic                            spi_err            ;
 logic                            spi_reg_wen        ;
 logic                            spi_reg_ren        ;
 logic                            reg_spi_ack        ;
+logic [2:                     0] reg_spi_ack_ff     ;
 //==================================
 //main code
 //==================================
@@ -106,14 +109,14 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-assign lanch_spi_access = spi_csb_sync & ~spi_csb_sync_ff;
+assign lanch_spi_access = spi_csb_sync & ~spi_csb_sync_ff & i_spi_slv_en;
 
 assign spi_rx_cmd  = spi_rx_bit[SPI_RX_BIT_NUM-1   -: SPI_RX_CMD_BIT_NUM ];
 assign spi_rx_data = spi_rx_bit[SPI_RX_CRC_BIT_NUM +: SPI_RX_DATA_BIT_NUM];
 assign spi_rx_crc  = spi_rx_bit[SPI_RX_CRC_BIT_NUM-1:                   0];
 
-assign slv_rsp_data = {~i_reg_spi_rack|i_reg_spi_wack, i_reg_spi_addr, i_reg_spi_data};
-assign crc_data_in  = reg_spi_ack ? slv_rsp_data : {spi_rx_cmd, spi_rx_data}          ;
+assign reg_rsp_data = {~i_reg_spi_rack|i_reg_spi_wack, i_reg_spi_addr, i_reg_spi_data};
+assign crc_data_in  = reg_spi_ack ? reg_rsp_data : {spi_rx_cmd, spi_rx_data}          ;
 
 crc16to8_parallel U_CRC16to8(
     .data_in(crc_data_in    ),
@@ -127,9 +130,18 @@ assign reg_spi_ack = i_reg_spi_wack | i_reg_spi_rack;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
+        reg_spi_ack_ff[2:0] <= 3'b0;
+    end
+    else begin
+        reg_spi_ack_ff[2:0] <= {reg_spi_ack_ff[1:0], reg_spi_ack};
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
         spi_access_flag <= 1'b0;
     end
-    else if(reg_spi_ack) begin
+    else if(reg_spi_ack_ff[2]) begin //use reg_spi_ack_ff[2] for make sure spi_sclk steadily sample slv_rsp_bit.
         spi_access_flag <= 1'b0;
     end
     else if(lanch_spi_access) begin
@@ -142,7 +154,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         spi_acc_gap_cnt <= SPI_MIN_ACC_CNT_W'(0);
     end
-    else if(lanch_spi_access | reg_spi_ack) begin
+    else if(lanch_spi_access | reg_spi_ack_ff[2]) begin
         spi_acc_gap_cnt <= SPI_MIN_ACC_CNT_W'(0);    
     end
     else if(spi_access_flag) begin
@@ -180,23 +192,32 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-always_ff@(posedge i_clk) begin
-    if(spi_reg_wen | spi_reg_ren) begin
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_spi_reg_addr <= REG_AW'(0);   
+    end
+    else if(spi_reg_wen | spi_reg_ren) begin
         o_spi_reg_addr <= spi_rx_cmd[SPI_RX_CMD_BIT_NUM-2: 0];
     end
     else;
 end
 
-always_ff@(posedge i_clk) begin
-    if(spi_reg_wen) begin
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_spi_reg_wdata <= REG_DW'(0);
+    end
+    else if(spi_reg_wen) begin
         o_spi_reg_wdata <= spi_rx_data;
     end
     else;
 end
 
-always_ff@(posedge i_clk) begin
-    if(reg_spi_ack) begin
-        slv_rsp_bit <= {slv_rsp_data, crc_out};
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        slv_rsp_bit <= SPI_RX_BIT_NUM'(0);
+    end
+    else if(reg_spi_ack) begin
+        slv_rsp_bit <= {reg_rsp_data, crc_out};
     end
     else;
 end
