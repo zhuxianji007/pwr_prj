@@ -16,7 +16,10 @@ module lv_owt_rx_ctrl #(
     output logic                            o_owt_rx_ack   ,
     output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_rx_cmd   ,
     output logic [OWT_ADCD_BIT_NUM-1:   0]  o_owt_rx_data  ,
-    output logic                            o_owt_rx_status,//0: normal; 1: error.         
+    output logic                            o_owt_rx_status,//0: normal; 1: error. 
+
+    input  logic                            
+    output logic                            o_owt_com_err  ,        
     
     input  logic                            i_clk	       ,
     input  logic                            i_rst_n
@@ -53,6 +56,7 @@ logic                               crc8_chk_start      ;
 logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc      ;
 logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc_lock ;
 logic                               owt_rx_status       ;
+logic                               owt_rx_ack          ;
 //==================================
 //main code
 //==================================
@@ -137,6 +141,9 @@ always_comb begin
                 owt_rx_nxt_st = OWT_IDLE_ST;
             end
             else;
+        end
+        default : begin
+            owt_rx_nxt_st = OWT_IDLE_ST;    
         end
     endcase
 end
@@ -329,17 +336,20 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
+assign owt_rx_ack = (owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_nxt_st==OWT_IDLE_ST);
+
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_owt_rx_ack <= 1'b0;
     end
     else begin
-        o_owt_rx_ack <= (owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_nxt_st==OWT_IDLE_ST);
+        o_owt_rx_ack <= owt_rx_ack;
     end
 end
 
 assign owt_rx_status = (((owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_cur_st != OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
-                        (((rx_sync_tail_bit != 4'b1100) & (owt_rx_cur_st == OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST));
+                        (((rx_sync_tail_bit != 4'b1100) & (owt_rx_cur_st == OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
+                        (crc8_chk_o_crc_lock != rx_crc_data);
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -349,6 +359,9 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         o_owt_rx_status <= owt_rx_status;
     end
 end
+
+assign o_owt_rx_cmd  = rx_cmd_data;
+assign o_owt_rx_data = rx_adc_data;
 // synopsys translate_off    
 //==================================
 //assertion

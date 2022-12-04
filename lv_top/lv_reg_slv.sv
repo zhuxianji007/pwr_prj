@@ -14,7 +14,7 @@
 //=============================================================
 module lv_reg_slv #(
     `include "lv_param.vh"
-    parameter END_OF_LIST          = 1
+    parameter END_OF_LIST = 1
 )(
     //spi reg access interface 
     input  logic                      i_spi_reg_ren                 ,
@@ -57,8 +57,8 @@ module lv_reg_slv #(
     input logic                     i_int_intb_hv                   ,
 
     input logic [REG_DW-1:    0]    i_fsm_status                    ,   
-    input logic [9:           0]    i_adc1_data                     ,
-    input logic [9:           0]    i_adc2_data                     ,
+    input logic [ADC_DW-1:    0]    i_adc1_data                     ,
+    input logic [ADC_DW-1:    0]    i_adc2_data                     ,
     input logic [15:          0]    i_bist_rult                     ,
     input logic [REG_DW-1:    0]    i_adc_status                    ,
 
@@ -211,7 +211,7 @@ assign o_rst_n = rst_n;
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h00      ),
+    .REG_ADDR               (7'h00      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_LVHV_DEVICE_ID(
@@ -231,7 +231,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (7'h00      ),
-    .REG_ADDR               (8'h01      ),
+    .REG_ADDR               (7'h01      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -256,7 +256,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (1'h0       ),
-    .REG_ADDR               (8'h01      ),
+    .REG_ADDR               (7'h01      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -291,7 +291,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h0A      ),
-    .REG_ADDR               (8'h02      ),
+    .REG_ADDR               (7'h02      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -320,7 +320,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'hFF      ),
-    .REG_ADDR               (8'h03      ),
+    .REG_ADDR               (7'h03      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -352,7 +352,7 @@ rwc_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h08      ),
+    .REG_ADDR               (7'h08      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -386,7 +386,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h09      ),
+    .REG_ADDR               (7'h09      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -413,7 +413,7 @@ rwc_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h0A      ),
+    .REG_ADDR               (7'h0A      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -448,7 +448,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h0B      ),
+    .REG_ADDR               (7'h0B      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -474,7 +474,7 @@ assign status3_in = {i_int_vrtmon, i_int_fsifo, i_int_pwma, i_int_pwm
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h0C      ),
+    .REG_ADDR               (7'h0C      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_STATUS3(
@@ -492,7 +492,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h0D      ),
+    .REG_ADDR               (7'h0D      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_STATUS4(
@@ -510,7 +510,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h10      ),
+    .REG_ADDR               (7'h10      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_ADC1_DATA_LOW(
@@ -528,7 +528,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h11      ),
+    .REG_ADDR               (7'h11      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_ADC1_DATA_HIG(
@@ -546,7 +546,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h12      ),
+    .REG_ADDR               (7'h12      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_ADC2_DATA_LOW(
@@ -564,7 +564,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h13      ),
+    .REG_ADDR               (7'h13      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_ADC2_DATA_HIG(
@@ -582,7 +582,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h14      ),
+    .REG_ADDR               (7'h14      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_BIST_RESULT1(
@@ -600,7 +600,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h15      ),
+    .REG_ADDR               (7'h15      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_BIST_RESULT2(
@@ -618,7 +618,7 @@ ro_reg #(
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .REG_ADDR               (8'h1F      ),
+    .REG_ADDR               (7'h1F      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_RD    (1'b1       )
 )U_ADC_REQ(
@@ -638,7 +638,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h20      ),
+    .REG_ADDR               (7'h20      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -665,7 +665,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h21      ),
+    .REG_ADDR               (7'h21      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -692,7 +692,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h22      ),
+    .REG_ADDR               (7'h22      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -719,7 +719,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h23      ),
+    .REG_ADDR               (7'h23      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -746,7 +746,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h10      ),
-    .REG_ADDR               (8'h24      ),
+    .REG_ADDR               (7'h24      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -775,7 +775,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h10      ),
-    .REG_ADDR               (8'h25      ),
+    .REG_ADDR               (7'h25      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -802,7 +802,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'hDF      ),
-    .REG_ADDR               (8'h26      ),
+    .REG_ADDR               (7'h26      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -829,7 +829,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h27      ),
+    .REG_ADDR               (7'h27      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -856,7 +856,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h24      ),
-    .REG_ADDR               (8'h28      ),
+    .REG_ADDR               (7'h28      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -884,7 +884,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h05      ),
-    .REG_ADDR               (8'h29      ),
+    .REG_ADDR               (7'h29      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -912,7 +912,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h2A      ),
+    .REG_ADDR               (7'h2A      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -939,7 +939,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h2B      ),
+    .REG_ADDR               (7'h2B      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
@@ -966,7 +966,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
-    .REG_ADDR               (8'h2C      ),
+    .REG_ADDR               (7'h2C      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
@@ -993,7 +993,7 @@ rw_reg #(
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h50      ),
-    .REG_ADDR               (8'h30      ),
+    .REG_ADDR               (7'h30      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),

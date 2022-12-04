@@ -218,6 +218,9 @@ always_comb begin
             end
             else;
         end
+        default : begin
+            owt_tx_nxt_st = OWT_IDLE_ST;
+        end
     endcase
 end
 
