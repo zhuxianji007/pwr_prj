@@ -56,7 +56,7 @@ logic                               owt_rx_status       ;
 //==================================
 //main code
 //==================================
- always_ff@(posedge i_clk or negedge i_rst_n) begin
+always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         owt_rx_cur_st <= OWT_FSM_ST_W'(0);
     end
@@ -358,3 +358,4 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
