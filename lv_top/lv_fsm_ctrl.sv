@@ -108,6 +108,9 @@ always_comb begin
             if(~i_pwr_on) begin
                 lv_ctrl_nxt_st = PWR_DWN_ST;
             end
+            else if(i_efuse_load_done & ~i_efuse_vld) begin
+               lv_ctrl_nxt_st = TEST_ST; 
+            end
             else;
         end
         default : begin
