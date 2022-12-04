@@ -17,13 +17,16 @@ module lv_reg_slv #(
     parameter END_OF_LIST          = 1
 )(
     //spi reg access interface 
-    input  logic                    i_spi_reg_ren                   ,
-    input  logic                    i_spi_reg_wen                   ,
-    input  logic [REG_AW-1:   0]    i_spi_reg_addr                  ,
-    input  logic [REG_DW-1:   0]    i_spi_reg_wdata                 ,
-    output logic                    o_reg_spi_rack                  ,
-    output logic                    o_reg_spi_rstatus               ,
-    output logic [REG_DW-1:   0]    o_reg_spi_rdata                 ,
+    input  logic                      i_spi_reg_ren                 ,
+    input  logic                      i_spi_reg_wen                 ,
+    input  logic [REG_AW-1:     0]    i_spi_reg_addr                ,
+    input  logic [REG_DW-1:     0]    i_spi_reg_wdata               ,
+    input  logic [REG_CRC_W-1:  0]    i_spi_reg_wcrc                ,
+
+    output logic                      o_reg_spi_wack                ,
+    output logic                      o_reg_spi_rack                ,
+    output logic [REG_DW-1:     0]    o_reg_spi_rdata               ,
+    output logic [REG_CRC_W-1:  0]    o_reg_spi_rcrc                ,
     
     //inner flop-flip data
     input  logic [REG_DW-1:   0]    i_lvhv_device_id                ,
@@ -131,7 +134,7 @@ logic                  spi_reg_ren              ;
 logic [REG_AW-1:    0] spi_reg_addr             ;
 logic [REG_DW-1:    0] spi_reg_wdata            ;
 logic [REG_DW-1:    0] reg_spi_rdata            ;
-logic [REG_CRC_W-1: 0] crc_data                 ;
+logic [REG_CRC_W-1: 0] reg_spi_rcrc             ;
 
 logic [REG_DW-1:    0] status1_lgc_wen          ;
 logic [REG_DW-1:    0] status2_lgc_wen          ;
@@ -202,14 +205,6 @@ rstn_merge U_RSTN_MERGE(
     .o_rst_n    (rst_n   )
 );
 assign o_rst_n = rst_n;
-
-gen_reg_crc U_GEN_REG_CRC(
-    .data_in    (i_spi_reg_wdata    ),
-    .crc_en     (i_spi_reg_wen      ),
-    .crc_out    (crc_data           ),
-    .rst        (rst_n              ),
-    .clk        (i_clk              )
-);
 
 //instance regsister
 //LVHV_DEVICE_ID REGISTER
@@ -1019,28 +1014,12 @@ rw_reg #(
 );
 assign o_t_dead_time_tdt_tdt = reg_t_dead_time[7:4];
 
-//spi reg in
-always_ff@(posedge i_clk or negedge rst_n) begin
-    if(~rst_n) begin
-        spi_reg_ren <= 1'b0;
-        spi_reg_wen <= 1'b0;
-    end
-    else begin
-        spi_reg_ren <= i_spi_reg_ren;
-        spi_reg_wen <= i_spi_reg_wen;
-    end
-end
+assign spi_reg_ren   = i_spi_reg_ren    ;
+assign spi_reg_wen   = i_spi_reg_wen    ;
+assign spi_reg_addr  = i_spi_reg_addr   ;
+assign spi_reg_wdata = i_spi_reg_wdata  ;
 
-always_ff@(posedge i_clk or negedge rst_n) begin
-    if(~rst_n) begin
-        spi_reg_addr  <= REG_AW'(0);
-        spi_reg_wdata <= REG_DW'(0);
-    end
-    else begin
-        spi_reg_addr  <= (i_spi_reg_ren | i_spi_reg_wen) ? i_spi_reg_addr  : spi_reg_addr ;
-        spi_reg_wdata <= (i_spi_reg_wen                ) ? i_spi_reg_wdata : spi_reg_wdata;
-    end
-end
+assign o_reg_spi_wack= spi_reg_wen      ;
 
 //rdata proc zone
 always_ff@(posedge i_clk or negedge rst_n) begin
@@ -1063,7 +1042,7 @@ always_ff@(posedge i_clk or negedge rst_n) begin
         o_reg_spi_rdata <= {REG_DW{1'b0}};
     end
     else begin
-        o_reg_spi_rdata <= reg_spi_rdata;
+        o_reg_spi_rdata <= spi_reg_ren ? reg_spi_rdata : o_reg_spi_rdata;
     end
 end
 

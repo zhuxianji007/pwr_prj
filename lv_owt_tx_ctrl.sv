@@ -12,17 +12,19 @@ module lv_owt_tx_ctrl #(
     `include "lv_param.vh"
     parameter END_OF_LIST = 1
 )(
-    input  logic                            i_spi_owt_wen  ,
-    input  logic                            i_spi_owt_ren  ,
-    input  logic [REG_AW-1:             0]  i_spi_owt_addr ,
-    input  logic [REG_DW-1:             0]  i_spi_owt_wdata,
+    input  logic                            i_spi_owt_wr_req    ,
+    input  logic                            i_spi_owt_rd_req    ,
+    input  logic [REG_AW-1:             0]  i_spi_owt_addr      ,
+    input  logic [REG_DW-1:             0]  i_spi_owt_data      ,
+    input  logic [REG_CRC_W-1:          0]  i_spi_owt_crc       ,
+    output logic                            o_owt_spi_ack       ,
     
-    input  logic                            i_wdg_owt_adc_req,
-    output logic                            o_owt_wdg_adc_ack,
+    input  logic                            i_wdg_owt_adc_req   ,
+    output logic                            o_owt_wdg_adc_ack   ,
 
-    output logic                            o_lv_hv_owt_tx , 
+    output logic                            o_lv_hv_owt_tx      , 
     
-    input  logic                            i_clk	       ,
+    input  logic                            i_clk	            ,
     input  logic                            i_rst_n
 );
 //==================================
@@ -33,10 +35,6 @@ localparam WR_OP    = 1'b1;
 //==================================
 //var delcaration
 //==================================
-logic                               spi_owt_wen_lock    ;
-logic                               spi_owt_ren_lock    ;
-logic [REG_AW-1:                0]  spi_owt_addr_lock   ;
-logic [REG_DW-1:                0]  spi_owt_wdata_lock  ;
 logic                               spi_owt_rw_flag     ;//0: read; 1: write.
 logic                               spi_owt_req         ;
 logic                               spi_owt_req_ff      ;
@@ -71,40 +69,10 @@ logic                               lv_hv_owt_vld_nc    ;
 //==================================
 //main code
 //==================================
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        spi_owt_wen_lock <= 1'b0;
-        spi_owt_ren_lock <= 1'b0;
-    end
-    else begin
-        spi_owt_wen_lock <= owt_spi_grant ? 1'b0 : (i_spi_owt_wen ? 1'b1 : spi_owt_wen_lock);
-        spi_owt_ren_lock <= owt_spi_grant ? 1'b0 : (i_spi_owt_ren ? 1'b1 : spi_owt_ren_lock);
-    end
-end
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        spi_owt_addr_lock <= REG_AW'(0);
-        spi_owt_rw_flag   <= RD_OP;
-    end
-    else if(i_spi_owt_wen | i_spi_owt_ren) begin
-        spi_owt_addr_lock <= i_spi_owt_addr;
-        spi_owt_rw_flag   <= i_spi_owt_ren ? RD_OP : WR_OP;   
-    end
-    else;
-end
-
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        spi_owt_wdata_lock <= REG_DW'(0);
-    end
-    else if(i_spi_owt_wen) begin
-        spi_owt_wdata_lock <= i_spi_owt_wdata;   
-    end
-    else;
-end
-             
-assign spi_owt_req = (i_spi_owt_wen | spi_owt_wen_lock) | (i_spi_owt_ren | spi_owt_ren_lock);
+assign o_owt_spi_ack    = owt_spi_grant                     ;
+assign spi_owt_rw_flag  = i_spi_owt_rd_req ? RD_OP : WR_OP  ; 
+         
+assign spi_owt_req = (i_spi_owt_wr_req | i_spi_owt_rd_req);
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -253,11 +221,11 @@ always_comb begin
     endcase
 end
 
-assign tx_syn_head_bit  = OWT_SYNC_BIT_NUM'(0)                                                           ;
-assign tx_syn_tail_bit  = 4'b1100                                                                        ;
-assign tx_cmd_bit       = cur_tx_is_spi_req ? {spi_owt_rw_flag, spi_owt_addr_lock} : {RD_OP,REQ_ADC_ADDR};
-assign tx_data_bit      = cur_tx_is_spi_req ? spi_owt_wdata_lock                   : OWT_DATA_BIT_NUM'(0);
-assign tx_end_tail_bit  = 4'b1100                                                                        ;
+assign tx_syn_head_bit  = OWT_SYNC_BIT_NUM'(0)                                                         ;
+assign tx_syn_tail_bit  = 4'b1100                                                                      ;
+assign tx_cmd_bit       = cur_tx_is_spi_req ? {spi_owt_rw_flag, i_spi_owt_addr} : {RD_OP,REQ_ADC_ADDR} ;
+assign tx_data_bit      = cur_tx_is_spi_req ? i_spi_owt_data                    : OWT_DATA_BIT_NUM'(0) ;
+assign tx_end_tail_bit  = 4'b1100                                                                      ;
 assign tx_vld_bit       = (owt_tx_cur_st==OWT_SYNC_HEAD_ST) ? tx_syn_head_bit[OWT_SYNC_BIT_NUM-1-tx_cnt_bit] :
                           (owt_tx_cur_st==OWT_SYNC_TAIL_ST) ? tx_syn_tail_bit[OWT_TAIL_BIT_NUM-1-tx_cnt_bit] :
                           (owt_tx_cur_st==OWT_CMD_ST      ) ? tx_cmd_bit     [OWT_CMD_BIT_NUM -1-tx_cnt_bit] : 
