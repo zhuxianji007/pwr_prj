@@ -1,3 +1,4 @@
+parameter ADC_DW                = 10                                                        ,
 parameter FSM_ST_NUM            = 11                                                        ,
 parameter FSM_ST_W              = FSM_ST_NUM ? 1 : $clog2(FSM_ST_NUM)                       ,
 parameter REG_DW                = 8                                                         ,
