@@ -35,6 +35,7 @@ module lv_reg_access_ctrl #(
     output logic [REG_DW-1:     0]  o_spi_owt_data          ,
     input  logic                    i_owt_spi_wack          ,
     input  logic                    i_owt_spi_rack          ,
+    output logic                    o_spi_rst_wdg           ,
 
     output logic                    o_arb_reg_ren           ,
     output logic                    o_arb_reg_wen           ,
@@ -70,7 +71,8 @@ logic           trig_owt_rd_dgt_reg     ;//digital
 logic           trig_owt_acc_ang_reg    ;//analog
 logic           owt_wr_ack              ;
 logic           owt_rd_ack              ;
-logic           
+logic           spi_reg_wr_req_ff       ;
+logic           spi_reg_rd_req_ff       ;     
 //==================================
 //main code
 //==================================
@@ -110,6 +112,24 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
+        spi_reg_wr_req_ff <= 1'b0;
+    end
+    else begin
+        spi_reg_wr_req_ff <= i_spi_reg_wr_req;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        spi_reg_rd_req_ff <= 1'b0;
+    end
+    else begin
+        spi_reg_rd_req_ff <= i_spi_reg_rd_req;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
         o_spi_owt_wr_req <= 1'b0;
     end
     else if(i_owt_spi_wack) begin
@@ -129,6 +149,21 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
     else begin
         o_spi_owt_rd_req <= (trig_owt_rd_dgt_reg | trig_owt_acc_ang_reg) & i_spi_reg_rd_req;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_spi_rst_wdg <= 1'b0;
+    end
+    else if((trig_owt_rd_dgt_reg | trig_owt_acc_ang_reg) & (i_spi_reg_rd_req & ~spi_reg_rd_req_ff)) begin
+        o_spi_rst_wdg <= 1'b1;
+    end
+    else if((trig_owt_wr_dgt_reg | trig_owt_acc_ang_reg) & (i_spi_reg_wr_req & ~spi_reg_rd_req_ff)) begin
+        o_spi_rst_wdg <= 1'b1;
+    end
+    else begin
+        o_spi_rst_wdg <= 1'b0;
     end
 end
 
