@@ -28,7 +28,8 @@ module lv_wdg_ctrl #(
     output logic                    o_wdg_owt_tx_adc_req            ,
     input  logic                    i_owt_tx_wdg_adc_ack            ,
     input  logic                    i_spi_rst_wdg                   ,
-    input  logic                    i_test_st_lanch_wdg_owt_tx      ,
+
+    input  logic                    i_fsm_wdg_owt_tx_req            ,
 
     input  logic                    i_owt_rx_wdg_rsp                ,
     output logic                    o_wdg_timeout_err               ,
@@ -58,14 +59,16 @@ localparam SCAN_PTR_W                           = $clog2(SCAN_REG_NUM) ;
 //==================================
 //var delcaration
 //==================================
-logic [WDG_CNT_W-1:     0]  wdg_scanreg_cnt     ;
-logic [SCAN_PTR_W-1:    0]  wdg_scan_ptr        ;
-logic [2*REG_DW-1:      0]  crc16to8_data_in    ;
-logic [REG_CRC_W-1:     0]  crc16to8_out        ;
-logic [WDG_CNT_W-1:     0]  wdg_refresh_cnt     ;
-logic [WDG_CNT_W-1:     0]  wdg_timeout_cnt     ;
-logic                       owt_in_tx_flag      ;
-logic                       wdg_timeout_err     ;
+logic [WDG_CNT_W-1:     0]  wdg_scanreg_cnt         ;
+logic [SCAN_PTR_W-1:    0]  wdg_scan_ptr            ;
+logic [2*REG_DW-1:      0]  crc16to8_data_in        ;
+logic [REG_CRC_W-1:     0]  crc16to8_out            ;
+logic [WDG_CNT_W-1:     0]  wdg_refresh_cnt         ;
+logic [WDG_CNT_W-1:     0]  wdg_timeout_cnt         ;
+logic                       owt_in_tx_flag          ;
+logic                       wdg_timeout_err         ;
+logic                       fsm_wdg_owt_tx_req_ff   ;
+logic                       lanch_wdg_owt_tx        ;
 //==================================
 //main code
 //==================================
@@ -166,6 +169,17 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
+        fsm_wdg_owt_tx_req_ff <= 1'b0;
+    end
+    else begin
+        fsm_wdg_owt_tx_req_ff <= i_fsm_wdg_owt_tx_req;
+    end
+end
+
+assign lanch_wdg_owt_tx = i_fsm_wdg_owt_tx_req & ~fsm_wdg_owt_tx_req_ff;
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
         o_wdg_owt_tx_adc_req <= 1'b0;
     end
     else if(~i_wdg_owt_en) begin
@@ -174,7 +188,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else if(i_owt_tx_wdg_adc_ack) begin
         o_wdg_owt_tx_adc_req <= 1'b0;    
     end
-    else if((wdg_refresh_cnt==(WDG_REFRESH_TH[i_com_config1_wdgrefresh_config]-1)) || i_test_st_lanch_wdg_owt_tx) begin
+    else if((wdg_refresh_cnt==(WDG_REFRESH_TH[i_com_config1_wdgrefresh_config]-1)) || lanch_wdg_owt_tx) begin
         o_wdg_owt_tx_adc_req <= 1'b1;
     end
     else;

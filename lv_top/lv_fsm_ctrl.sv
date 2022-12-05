@@ -13,14 +13,14 @@ module lv_fsm_ctrl #(
     parameter END_OF_LIST = 1
 )( 
     input  logic                            i_pwr_on            ,
-    input  logic                            i_test_mode         ,
-    input  logic                            i_efuse_vld         ,
-    input  logic                            i_efuse_done        ,//soft lanch, make test_st -> wait_st
-    input  logic                            i_fsenb_n           ,
-    input  logic                            i_owt_com_err       ,
-    input  logic                            i_wdg_tmo_err       ,//tmo = timeout
-    input  logic                            i_spi_err           ,
-    input  logic                            i_scan_crc_err      ,
+    input  logic                            i_io_test_mode         ,
+    input  logic                            i_reg_efuse_vld         ,
+    input  logic                            i_reg_efuse_done        ,//soft lanch, make test_st -> wait_st
+    input  logic                            i_reg_fsenb_n           ,
+    input  logic                            i_reg_owt_com_err       ,
+    input  logic                            i_reg_wdg_tmo_err       ,//tmo = timeout
+    input  logic                            i_reg_spi_err           ,
+    input  logic                            i_reg_scan_crc_err      ,
     input  logic                            i_lv_pwm_dterr      ,
     input  logic                            i_lv_pwm_mmerr      ,
     input  logic                            i_lv_vsup_uverr     ,
@@ -50,6 +50,9 @@ module lv_fsm_ctrl #(
 
     output logic                            o_efuse_load_req    ,
     input  logic                            i_efuse_load_done   , //hardware lanch, indicate efuse have load done.
+    
+    output logic                            o_fsm_wdg_owt_tx_req,
+    input  logic                            i_owt_rx_ack        ,
     
     input  logic                            i_clk               ,
     input  logic                            i_rst_n
@@ -86,6 +89,32 @@ assign lvhv_err1 = i_lv_pwm_mmerr | i_lv_vsup_uverr| i_lv_vsup_overr | i_hv_vcc_
                    i_hv_vcc_overr | i_hv_ot_err    | i_hv_desat_err  | i_hv_scp_err;
 
 assign lvhv_err2 = i_lv_pwm_dterr | i_hv_oc_err;
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_efuse_load_req <= 1'b0;
+    end
+    else if(i_efuse_load_done) begin
+        o_efuse_load_req <= 1'b0;
+    end
+    else if(~i_test_mode & ~i_efuse_vld & (lv_ctrl_cur_st==WAIT_ST)) begin
+        o_efuse_load_req <= 1'b1;
+    end
+    else;
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_fsm_wdg_owt_tx_req <= 1'b0;
+    end
+    else if(i_owt_rx_ack) begin
+        o_fsm_wdg_owt_tx_req <= 1'b0;
+    end
+    else if(~i_test_mode & i_efuse_vld & (lv_ctrl_cur_st==WAIT_ST) & (i_owt_com_err | i_wdg_tmo_err)) begin
+        o_fsm_wdg_owt_tx_req <= 1'b1;
+    end
+    else;
+end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
