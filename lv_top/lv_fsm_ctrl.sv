@@ -15,7 +15,7 @@ module lv_fsm_ctrl #(
     input  logic                            i_pwr_on            ,
     input  logic                            i_test_mode         ,
     input  logic                            i_efuse_vld         ,
-    input  logic                            i_efuse_done        ,
+    input  logic                            i_efuse_done        ,//soft lanch, make test_st -> wait_st
     input  logic                            i_fsenb_n           ,
     input  logic                            i_owt_com_err       ,
     input  logic                            i_wdg_tmo_err       ,//tmo = timeout
@@ -49,7 +49,7 @@ module lv_fsm_ctrl #(
     output logic                            o_intb_n            ,
 
     output logic                            o_efuse_load_req    ,
-    input  logic                            i_efuse_load_done   ,
+    input  logic                            i_efuse_load_done   , //hardware lanch, indicate efuse have load done.
     
     input  logic                            i_clk               ,
     input  logic                            i_rst_n
@@ -108,7 +108,7 @@ always_comb begin
             if(~i_pwr_on) begin
                 lv_ctrl_nxt_st = PWR_DWN_ST;
             end
-            else if(i_efuse_load_done & ~i_efuse_vld) begin
+            else if(i_test_mode || (i_efuse_load_done & ~i_efuse_vld)) begin
                lv_ctrl_nxt_st = TEST_ST; 
             end
             else;

@@ -28,6 +28,7 @@ module lv_wdg_ctrl #(
     output logic                    o_wdg_owt_tx_adc_req            ,
     input  logic                    i_owt_tx_wdg_adc_ack            ,
     input  logic                    i_spi_rst_wdg                   ,
+    input  logic                    i_test_st_lanch_wdg_owt_tx      ,
 
     input  logic                    i_owt_rx_wdg_rsp                ,
     output logic                    o_wdg_timeout_err               ,
@@ -173,7 +174,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else if(i_owt_tx_wdg_adc_ack) begin
         o_wdg_owt_tx_adc_req <= 1'b0;    
     end
-    else if(wdg_refresh_cnt==(WDG_REFRESH_TH[i_com_config1_wdgrefresh_config]-1)) begin
+    else if((wdg_refresh_cnt==(WDG_REFRESH_TH[i_com_config1_wdgrefresh_config]-1)) || i_test_st_lanch_wdg_owt_tx) begin
         o_wdg_owt_tx_adc_req <= 1'b1;
     end
     else;

@@ -310,9 +310,9 @@ rw_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_com_config_rtmon          = reg_com_config0[7:7];
-assign o_com_config_comerr_mode    = reg_com_config0[6:6];
-assign o_com_config_comerr_config  = reg_com_config0[3:0];
+assign o_com_config0_rtmon          = reg_com_config0[7:7];
+assign o_com_config0_comerr_mode    = reg_com_config0[6:6];
+assign o_com_config0_comerr_config  = reg_com_config0[3:0];
 
 //COM_CONFIG1 REGISTER
 rw_reg #(

@@ -12,22 +12,27 @@ module lv_owt_rx_ctrl #(
     `include "lv_param.vh"
     parameter END_OF_LIST = 1
 )( 
-    input  logic                            i_hv_lv_owt_rx ,
-    output logic                            o_owt_rx_ack   ,
-    output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_rx_cmd   ,
-    output logic [OWT_ADCD_BIT_NUM-1:   0]  o_owt_rx_data  ,
-    output logic                            o_owt_rx_status,//0: normal; 1: error. 
+    input  logic                            i_hv_lv_owt_rx      ,
+    output logic                            o_owt_rx_ack        ,
+    output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_rx_cmd        ,
+    output logic [OWT_ADCD_BIT_NUM-1:   0]  o_owt_rx_data       ,
+    output logic                            o_owt_rx_status     ,//0: normal; 1: error. 
 
-    input  logic                            
-    output logic                            o_owt_com_err  ,        
+    input  logic                            i_reg_comerr_mode   ,
+    input  logic [3:                    0]  i_reg_comerr_config ,
+    output logic                            o_owt_com_err       ,        
     
-    input  logic                            i_clk	       ,
+    input  logic                            i_clk	            ,
     input  logic                            i_rst_n
  );
 //==================================
 //local param delcaration
 //==================================
-
+localparam  [3: 0]  OWT_COM_ERR_SET_NUM  = {32, 16, 8, 4}                   ;
+localparam  [3: 0]  OWT_COM_COR_SUB_NUM  = {8 , 4 , 2, 1}                   ;
+localparam          OWT_COM_MAX_ERR_NUM  = 512                              ;
+localparam          OWT_COM_ERR_CNT_W    = $clog2(OWT_COM_MAX_ERR_NUM+1)    ;
+localparam          INIT_OWT_COM_ERR_NUM = OWT_COM_ERR_CNT_W'(32)           ;
 //==================================
 //var delcaration
 //==================================
@@ -57,6 +62,10 @@ logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc      ;
 logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc_lock ;
 logic                               owt_rx_status       ;
 logic                               owt_rx_ack          ;
+logic [OWT_COM_CNT_W-1:         0]  owt_com_err_cnt     ;
+logic [1:                       0]  owt_com_err_add_sel ;
+logic [1:                       0]  owt_com_cor_sub_sel ;
+logic                               owt_com_err         ;
 //==================================
 //main code
 //==================================
@@ -362,6 +371,49 @@ end
 
 assign o_owt_rx_cmd  = rx_cmd_data;
 assign o_owt_rx_data = rx_adc_data;
+
+
+assign owt_com_err_add_sel = i_reg_comerr_config[3: 2];
+assign owt_com_cor_sub_sel = i_reg_comerr_config[1: 0];
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        owt_com_err_cnt <= INIT_OWT_COM_ERR_NUM;
+    end
+    else if(owt_rx_ack & owt_rx_status) begin
+        if((owt_com_err_cnt+OWT_COM_ERR_SET_NUM[owt_com_err_add_sel])>=OWT_COM_MAX_ERR_NUM) begin
+            owt_com_err_cnt <= OWT_COM_MAX_ERR_NUM;
+        end
+        else begin
+            owt_com_err_cnt <= (owt_com_err_cnt+OWT_COM_ERR_SET_NUM[owt_com_err_add_sel]);
+        end
+    end
+    else if(owt_rx_ack & ~owt_rx_status) begin
+        if(OWT_COM_COR_SUB_NUM[owt_com_cor_sub_sel]>=owt_com_err_cnt) begin
+            owt_com_err_cnt <= OWT_COM_ERR_CNT_W'(0);
+        end
+        else begin
+            owt_com_err_cnt <= (owt_com_err_cnt-OWT_COM_COR_SUB_NUM[owt_com_cor_sub_sel]);
+        end
+    end
+    else;
+end
+
+assign owt_com_err = (~i_reg_comerr_mode & (owt_com_err_cnt>=OWT_COM_ERR_SET_NUM[owt_com_err_add_sel])) |
+                     ( i_reg_comerr_mode & (owt_com_err_cnt==OWT_COM_ERR_CNT_W'(0)));
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_owt_com_err <= 1'b1;
+    end
+    else if(owt_com_err) begin
+        o_owt_com_err <= 1'b1;
+    end
+    else begin
+        o_owt_com_err <= 1'b0;
+    end
+end
+
 // synopsys translate_off    
 //==================================
 //assertion
