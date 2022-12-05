@@ -20,7 +20,9 @@ module lv_owt_rx_ctrl #(
 
     input  logic                            i_reg_comerr_mode   ,
     input  logic [3:                    0]  i_reg_comerr_config ,
-    output logic                            o_owt_com_err       ,        
+    output logic                            o_owt_com_err       ,
+
+    input  logic [OWT_CMD_BIT_NUM-1:    0]  i_owt_last_tx_cmd   ,        
     
     input  logic                            i_clk	            ,
     input  logic                            i_rst_n
@@ -358,7 +360,7 @@ end
 
 assign owt_rx_status = (((owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_cur_st != OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
                         (((rx_sync_tail_bit != 4'b1100) & (owt_rx_cur_st == OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
-                        (crc8_chk_o_crc_lock != rx_crc_data);
+                        (crc8_chk_o_crc_lock != rx_crc_data) | (i_owt_last_tx_cmd != rx_cmd_data);
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin

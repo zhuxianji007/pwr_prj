@@ -236,9 +236,13 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_wdg_timeout_err <= 1'b0;
     end
-    else begin
-        o_wdg_timeout_err <= wdg_timeout_err;
+    else if(i_owt_rx_wdg_rsp) begin
+        o_wdg_timeout_err <= 1'b0;    
     end
+    else if(wdg_timeout_err) begin
+        o_wdg_timeout_err <= 1'b1;
+    end
+    else;
 end
 
 // synopsys translate_off    
