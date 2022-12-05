@@ -32,7 +32,7 @@ module spi_slv #(
 
     output logic                    o_spi_err           ,
 
-    input  logic                    i_clk	            ,
+    input  logic                    i_clk               ,
     input  logic                    i_rst_n
  );
 //==================================
