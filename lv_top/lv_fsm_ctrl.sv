@@ -42,7 +42,9 @@ module lv_fsm_ctrl #(
     output logic                            o_wdg_scan_en       ,
     output logic                            o_spi_en            ,
     output logic                            o_owt_com_en        ,
-    output logic                            o_cfg_crc_reg_en    ,
+    output logic                            o_cfg_st_reg_en     ,//when in cfg_st support reg read & write.
+    output logic                            o_test_st_reg_en    ,//when in test_st support reg read & write.
+    output logic                            o_spi_ctrl_reg_en   ,//when spi enable support reg read & write.
     output logic                            o_bist_en           ,
 
     output logic                            o_intb_n            ,
@@ -303,6 +305,8 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
+assign o_spi_ctrl_reg_en = o_spi_en;
+
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_owt_com_en <= 1'b0;
@@ -319,13 +323,25 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_cfg_crc_reg_en <= 1'b0;
+        o_cfg_st_reg_en <= 1'b0;
     end
-    else if((lv_ctrl_nxt_st==TEST_ST) || (lv_ctrl_nxt_st==CFG_ST)) begin
-        o_cfg_crc_reg_en <= 1'b1;
+    else if(lv_ctrl_nxt_st==TEST_ST) begin
+        o_cfg_st_reg_en <= 1'b1;
     end
     else begin
-        o_cfg_crc_reg_en <= 1'b0;
+        o_cfg_st_reg_en <= 1'b0;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_test_st_reg_en <= 1'b0;
+    end
+    else if(lv_ctrl_nxt_st==CFG_ST) begin
+        o_test_st_reg_en <= 1'b1;
+    end
+    else begin
+        o_test_st_reg_en <= 1'b0;
     end
 end
 
@@ -362,5 +378,8 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
 
 
