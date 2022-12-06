@@ -43,8 +43,8 @@ localparam SPI_RX_DATA_BIT_NUM   = 8                                            
 localparam SPI_RX_CRC_BIT_NUM    = 8                                                         ;
 localparam SPI_RX_BIT_NUM        = SPI_RX_CMD_BIT_NUM+SPI_RX_DATA_BIT_NUM+SPI_RX_CRC_BIT_NUM ;
 localparam MISO_RPTR_W           = $clog2(2*SPI_RX_BIT_NUM)                                  ;
-localparam SPI_MIN_ACC_CNT_W     = 16                                                        ;
-localparam SPI_MIN_ACC_GAP       = SPI_MIN_ACC_CNT_W'(1000)                                  ;
+localparam SPI_MIN_ACC_CYC_NUM   = 19*CLK_M                                                  ;//one core clk cycle is (1000/48)ns, 19us has (19x1000)ns/(1000/48)ns = 19x48 cycle.
+localparam SPI_MIN_ACC_CNT_W     = $clog2(SPI_MIN_ACC_CYC_NUM+1)                             ;
 //==================================
 //var delcaration
 //==================================
@@ -176,7 +176,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-assign lt_acc_gap_err = (spi_acc_gap_cnt < SPI_MIN_ACC_GAP) & lanch_spi_access;
+assign lt_acc_gap_err = (spi_acc_gap_cnt < SPI_MIN_ACC_CYC_NUM) & lanch_spi_access;
 
 assign spi_err = spi_crc_err | lt_acc_gap_err;
 
