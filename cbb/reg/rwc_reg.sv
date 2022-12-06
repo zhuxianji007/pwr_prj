@@ -16,13 +16,18 @@ module rwc_reg #(
     parameter SUPPORT_TEST_MODE_WR = 1'b1       ,
     parameter SUPPORT_TEST_MODE_RD = 1'b1       ,
     parameter SUPPORT_CFG_MODE_WR  = 1'b1       ,
-    parameter SUPPORT_CFG_MODE_RD  = 1'b1       , 
+    parameter SUPPORT_CFG_MODE_RD  = 1'b1       ,
+    parameter SUPPORT_SPI_EN_WR    = 1'b1       ,
+    parameter SUPPORT_SPI_EN_RD    = 1'b1       ,
+    parameter SUPPORT_EFUSE_WR     = 1'b1       , 
     parameter END_OF_LIST          = 1
 )( 
     input  logic           i_wen                ,
     input  logic           i_ren                ,
-    input  logic           i_test_mode_status   ,
-    input  logic           i_cfg_mode_status    ,
+    input  logic           i_test_st_reg_en     ,
+    input  logic           i_cfg_st_reg_en      ,
+    input  logic           i_spi_ctrl_reg_en    ,
+    input  logic           i_efuse_ctrl_reg_en  ,	
     input  logic [AW-1: 0] i_addr               ,
     input  logic [DW-1: 0] i_wdata              ,
     output logic [DW-1: 0] o_rdata              ,
@@ -47,8 +52,8 @@ logic [DW-1: 0] reg_data;
 //main code
 //==================================
 assign hit = (i_addr==REG_ADDR);
-assign wen = i_wen & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_WR) | (i_cfg_mode_status & SUPPORT_CFG_MODE_WR));
-assign ren = i_ren & hit & ((i_test_mode_status & SUPPORT_TEST_MODE_RD) | (i_cfg_mode_status & SUPPORT_CFG_MODE_RD));
+assign wen = i_wen & hit & ((i_test_st_reg_en & SUPPORT_TEST_MODE_WR) | (i_cfg_st_reg_en & SUPPORT_CFG_MODE_WR) | (i_spi_ctrl_reg_en & SUPPORT_SPI_EN_WR) | (i_efuse_ctrl_reg_en & SUPPORT_EFUSE_WR));
+assign ren = i_ren & hit & ((i_test_st_reg_en & SUPPORT_TEST_MODE_RD) | (i_cfg_st_reg_en & SUPPORT_CFG_MODE_RD) | (i_spi_ctrl_reg_en & SUPPORT_SPI_EN_RD));
   
 generate
 for(genvar i=0; i<DW; i=i+1) begin: REG_DATA_BLK
@@ -57,7 +62,7 @@ for(genvar i=0; i<DW; i=i+1) begin: REG_DATA_BLK
 	        reg_data[i] <= DEFAULT_VAL[i];
 	    end
   	    else begin
-	        reg_data[i] <= (i_lgc_wen[i] & i_lgc_wdata[i]) ? 1'b1 : ((wen & i_wdata[i]) ? 1'b0 : reg_data[i]);
+	        reg_data[i] <= (wen & i_wdata[i]) ? 1'b0 : ((i_lgc_wen[i] & i_lgc_wdata[i]) ? 1'b1 : reg_data[i]);
 	    end
     end
 end
@@ -73,3 +78,4 @@ assign o_rdata    = ren ? reg_data : {DW{1'b0}};
 //    
 // synopsys translate_on    
 endmodule
+
