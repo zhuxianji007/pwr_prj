@@ -27,4 +27,4 @@ parameter OWT_CRC_ST            = OWT_FSM_ST_W'(6)                              
 parameter OWT_END_TAIL_ST       = OWT_FSM_ST_W'(7)                                          ,
 parameter OWT_ABORT_ST          = OWT_FSM_ST_W'(8)                                          ,
 
-parameter CLK_M                 =  48                                                       ;
+parameter CLK_M                 =  48                                                       ,
