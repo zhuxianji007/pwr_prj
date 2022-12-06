@@ -117,8 +117,10 @@ module lv_reg_slv #(
     input  logic                    i_intb_hv_n                     ,
     output logic                    o_intb_n                        ,
 
-    input  logic                    i_test_mode_status              ,
-    input  logic                    i_cfg_mode_status               ,
+    input  logic                    i_test_st_reg_en                ,
+    input  logic                    i_cfg_st_reg_en                 ,
+    input  logic                    i_spi_ctrl_reg_en               ,
+    input  logic                    i_efuse_ctrl_reg_en             ,
     input  logic                    i_clk                           ,
     input  logic                    i_hrst_n                        ,
     input  logic                    i_srst_n                        ,
@@ -213,11 +215,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h00      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_LVHV_DEVICE_ID(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (i_lvhv_device_id                             ),
     .o_rdata              (rdata_lvhv_device_id                         ),
@@ -235,12 +239,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b1       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_MODE_H(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (1'b1                                         ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata[7:1]                           ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -260,12 +269,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b1       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_MODE_L(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (1'b1                                         ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata[0:0]                           ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -295,12 +309,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_COM_CONFIG(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -324,12 +343,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_COM_CONFIG(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -353,15 +377,20 @@ rwc_reg #(
     .AW                     (REG_AW     ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h08      ),
-    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_WR   (1'b0       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b1       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_STATUS1(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .o_rdata              (rdata_status1                                ),
@@ -390,12 +419,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_MASK1(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -414,15 +448,20 @@ rwc_reg #(
     .AW                     (REG_AW     ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h0A      ),
-    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_WR   (1'b0       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b1       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_STATUS2(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .o_rdata              (rdata_status2                                ),
@@ -452,12 +491,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_MASK2(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -476,11 +520,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h0C      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_STATUS3(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (status3_in                                   ),
     .o_rdata              (rdata_status3                                ),
@@ -494,11 +540,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h0D      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_STATUS4(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (i_fsm_status                                 ),
     .o_rdata              (rdata_status4                                ),
@@ -512,11 +560,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h10      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_ADC1_DATA_LOW(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (i_adc1_data[7:0]                             ),
     .o_rdata              (rdata_adc1_data_low                          ),
@@ -530,11 +580,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h11      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_ADC1_DATA_HIG(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            ({6'b0, i_adc1_data[9:8]}                     ),
     .o_rdata              (rdata_adc1_data_hig                          ),
@@ -548,11 +600,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h12      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_ADC2_DATA_LOW(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (i_adc2_data[7:0]                             ),
     .o_rdata              (rdata_adc2_data_low                          ),
@@ -566,11 +620,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h13      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_ADC2_DATA_HIG(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            ({6'b0, i_adc2_data[9:8]}                     ),
     .o_rdata              (rdata_adc2_data_hig                          ),
@@ -584,11 +640,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h14      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_BIST_RESULT1(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (i_bist_rult[7:0]                             ),
     .o_rdata              (rdata_bist_rult1                             ),
@@ -602,11 +660,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h15      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_BIST_RESULT2(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (i_bist_rult[15:8]                            ),
     .o_rdata              (rdata_bist_rult2                             ),
@@ -620,11 +680,13 @@ ro_reg #(
     .AW                     (REG_AW     ),
     .REG_ADDR               (7'h1F      ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
 )U_ADC_REQ(
     .i_ren                (spi_reg_ren                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
     .i_ff_data            (i_adc_status                                 ),
     .o_rdata              (rdata_adc_status                             ),
@@ -642,12 +704,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_DIE1_ID(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata[7:5]                           ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -669,12 +736,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_DIE2_ID(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata[7:5]                           ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -696,12 +768,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_DIE3_ID(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata[7:5]                           ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -723,12 +800,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_BGR_CODE_ISO(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -750,12 +832,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_IBIAS_COE_ISO(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -779,12 +866,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_OSC48M(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -806,12 +898,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_ISO_OSCB_FREQ_ADJ(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -833,12 +930,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_ISO_RESERVED_REG(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -860,12 +962,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_ISO_AMP_IBIAS(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -888,12 +995,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_ISO_RX_DEMO(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -916,12 +1028,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_ISO_TEST_SW(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -943,12 +1060,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b0       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_ISO_OSC_JIT(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -969,13 +1091,18 @@ rw_reg #(
     .REG_ADDR               (7'h2C      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_ANA_RESERVED_REG(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -997,12 +1124,17 @@ rw_reg #(
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
     .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b1       )
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
 )U_T_DEAT_TIME(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
-    .i_test_mode_status   (i_test_mode_status                           ),
-    .i_cfg_mode_status    (i_cfg_mode_status                            ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
@@ -1067,5 +1199,7 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
 
 
