@@ -63,16 +63,17 @@ localparam [COM_RD_REG_NUM-1: 0] COM_RD_REG_ADDR = {7'h1F,7'h15,7'h14,7'h0D,7'h0
 //==================================
 //var delcaration
 //==================================
-logic           wdg_scan_grant          ;
-logic [2:   0]  wdg_scan_grant_ff       ;
-logic           wdg_scan_grant_mask     ;
-logic           trig_owt_wr_dgt_reg     ;
-logic           trig_owt_rd_dgt_reg     ;//digital
-logic           trig_owt_acc_ang_reg    ;//analog
-logic           owt_wr_ack              ;
-logic           owt_rd_ack              ;
-logic           spi_reg_wr_req_ff       ;
-logic           spi_reg_rd_req_ff       ;     
+logic               wdg_scan_grant          ;
+logic [2:       0]  wdg_scan_grant_ff       ;
+logic               wdg_scan_grant_mask     ;
+logic               trig_owt_wr_dgt_reg     ;
+logic               trig_owt_rd_dgt_reg     ;//digital
+logic               trig_owt_acc_ang_reg    ;//analog
+logic               owt_wr_ack              ;
+logic               owt_rd_ack              ;
+logic               spi_reg_wr_req_ff       ;
+logic               spi_reg_rd_req_ff       ;
+logic [REG_DW-1: 0] reg_spi_data            ;                  
 //==================================
 //main code
 //==================================
@@ -236,9 +237,11 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else;
 end
 
+assign reg_spi_data   = i_spi_reg_wr_req ? o_arb_reg_wdata :
+
 assign o_reg_spi_wack = i_owt_spi_wack | (~trig_owt_wr_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_arb_wack)                        ; 
 assign o_reg_spi_rack = i_owt_spi_rack | (~trig_owt_rd_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_arb_rack & ~wdg_scan_grant_ff[2]);
-assign o_reg_spi_data = o_arb_reg_wdata                                                                                         ;
+assign o_reg_spi_data = reg_spi_data                                                                                            ;
 assign o_reg_spi_addr = o_arb_reg_addr                                                                                          ;
 // synopsys translate_off    
 //==================================

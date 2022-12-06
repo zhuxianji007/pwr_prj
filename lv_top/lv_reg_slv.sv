@@ -401,13 +401,13 @@ rwc_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_status1_bist_fail = reg_status1[7:7];
-assign o_status1_pwm_mmerr = reg_status1[5:5];
-assign o_status1_pwm_dterr = reg_status1[4:4];
-assign o_status1_wdg_err   = reg_status1[3:3];
-assign o_status1_com_err   = reg_status1[2:2];
-assign o_status1_crc_err   = reg_status1[1:1];
-assign o_status1_spi_err   = reg_status1[0:0];
+assign o_status1_bist_fail = reg_status1[7:7] & ~reg_mask1[7:7];
+assign o_status1_pwm_mmerr = reg_status1[5:5] & ~reg_mask1[5:5];
+assign o_status1_pwm_dterr = reg_status1[4:4] & ~reg_mask1[4:4];
+assign o_status1_wdg_err   = reg_status1[3:3] & ~reg_mask1[3:3];
+assign o_status1_com_err   = reg_status1[2:2] & ~reg_mask1[2:2];
+assign o_status1_crc_err   = reg_status1[1:1] & ~reg_mask1[1:1];
+assign o_status1_spi_err   = reg_status1[0:0] & ~reg_mask1[0:0];
 
 //MASK1 REGISTER
 rw_reg #(
@@ -472,14 +472,14 @@ rwc_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_status1_hv_scp_flt    = reg_status2[7:7];
-assign o_status1_hv_desat_flt  = reg_status2[6:6];
-assign o_status1_hv_oc         = reg_status2[5:5];
-assign o_status1_hv_ot         = reg_status2[4:4];
-assign o_status1_hv_vcc_ov     = reg_status2[3:3];
-assign o_status1_hv_vcc_uv     = reg_status2[2:2];
-assign o_status1_lv_vsup_ov    = reg_status2[1:1];
-assign o_status1_lv_vsup_uv    = reg_status2[0:0];
+assign o_status1_hv_scp_flt    = reg_status2[7:7] & ~reg_mask2[7:7];
+assign o_status1_hv_desat_flt  = reg_status2[6:6] & ~reg_mask2[6:6];
+assign o_status1_hv_oc         = reg_status2[5:5] & ~reg_mask2[5:5];
+assign o_status1_hv_ot         = reg_status2[4:4] & ~reg_mask2[4:4];
+assign o_status1_hv_vcc_ov     = reg_status2[3:3] & ~reg_mask2[3:3];
+assign o_status1_hv_vcc_uv     = reg_status2[2:2] & ~reg_mask2[2:2];
+assign o_status1_lv_vsup_ov    = reg_status2[1:1] & ~reg_mask2[1:1];
+assign o_status1_lv_vsup_uv    = reg_status2[0:0] & ~reg_mask2[0:0];
 
 //MASK2 REGISTER
 rw_reg #(

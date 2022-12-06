@@ -54,20 +54,20 @@ rw_reg #(
     .SUPPORT_SPI_EN_RD      (1'b0       ),
     .SUPPORT_EFUSE_WR       (1'b0       )
 )U_HV_ADC1_DATA(
-    .i_ren                (1'b0                        ),
-    .i_wen                (reg_wen                     ),
-    .i_test_st_reg_en     (1'b0                        ),
-    .i_cfg_st_reg_en      (1'b0                        ),
-    .i_spi_ctrl_reg_en    (1'b1                        ),
-    .i_efuse_ctrl_reg_en  (1'b0                        ),
-    .i_addr               (reg_addr                    ),
-    .i_wdata              (reg_wdata[ADC_DW-1: 0]      ),
-    .i_crc_data           ({REG_CRC_W{1'b0}}           ),
-    .o_rdata              (                            ),
-    .o_reg_data           (o_adc1_data                 ),
-    .o_rcrc               (                            ),
-    .i_clk                (i_clk                       ),
-    .i_rst_n              (rst_n                       )
+    .i_ren                (1'b0                                         ),
+    .i_wen                (reg_wen                                      ),
+    .i_test_st_reg_en     (1'b0                                         ),
+    .i_cfg_st_reg_en      (1'b0                                         ),
+    .i_spi_ctrl_reg_en    (1'b1                                         ),
+    .i_efuse_ctrl_reg_en  (1'b0                                         ),
+    .i_addr               (reg_addr                                     ),
+    .i_wdata              (reg_wdata[ADC_DW-1: 0]                       ),
+    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .o_rdata              (                                             ),
+    .o_reg_data           (o_adc1_data                                  ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (i_rst_n                                      )
 );
 
 rw_reg #(
@@ -84,20 +84,20 @@ rw_reg #(
     .SUPPORT_SPI_EN_RD      (1'b0       ),
     .SUPPORT_EFUSE_WR       (1'b0       )
 )U_HV_ADC2_DATA(
-    .i_ren                (1'b0                                     ),
-    .i_wen                (reg_wen                                  ),
-    .i_test_st_reg_en     (1'b0                                     ),
-    .i_cfg_st_reg_en      (1'b0                                     ),
-    .i_spi_ctrl_reg_en    (1'b1                                     ),
-    .i_efuse_ctrl_reg_en  (1'b0                                     ),
-    .i_addr               (reg_addr                                 ),
-    .i_wdata              (reg_wdata[OWT_ADCD_BIT_NUM-1 -: ADC_DW]  ),
-    .i_crc_data           ({REG_CRC_W{1'b0}}                        ),
-    .o_rdata              (                                         ),
-    .o_reg_data           (o_adc2_data                              ),
-    .o_rcrc               (                                         ),
-    .i_clk                (i_clk                                    ),
-    .i_rst_n              (rst_n                                    )
+    .i_ren                (1'b0                                         ),
+    .i_wen                (reg_wen                                      ),
+    .i_test_st_reg_en     (1'b0                                         ),
+    .i_cfg_st_reg_en      (1'b0                                         ),
+    .i_spi_ctrl_reg_en    (1'b1                                         ),
+    .i_efuse_ctrl_reg_en  (1'b0                                         ),
+    .i_addr               (reg_addr                                     ),
+    .i_wdata              (reg_wdata[OWT_ADCD_BIT_NUM-1 -: ADC_DW]      ),
+    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .o_rdata              (                                             ),
+    .o_reg_data           (o_adc2_data                                  ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
 );
 // synopsys translate_off    
 //==================================

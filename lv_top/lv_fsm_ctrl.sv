@@ -92,7 +92,7 @@ assign lvhv_err1 = i_reg_lv_pwm_mmerr | i_reg_lv_vsup_uverr| i_reg_lv_vsup_overr
 
 assign lvhv_err2 = i_reg_lv_pwm_dterr | i_reg_hv_oc_err;
 
-assign effect_pwm_err = lvhv_err1 | i_reg_owt_com_err | i_reg_wdg_tmo_err | i_reg_scan_crc_err;
+assign effect_pwm_err = lvhv_err1 | i_reg_owt_com_err | i_reg_wdg_tmo_err;
 
 assign fault_st_pwm_en = (lv_ctrl_cur_st==FAULT_ST) & ~effect_pwm_err;
 

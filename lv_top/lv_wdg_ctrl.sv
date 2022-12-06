@@ -9,11 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module lv_wdg_ctrl #(
-    parameter DW                   = 8          ,
-    parameter AW                   = 8          ,
-    parameter REG_ADDR             = {AW{1'b0}} ,
-    parameter SUPPORT_TEST_MODE_RD = 1'b1       ,
-    parameter SUPPORT_CFG_MODE_RD  = 1'b1       , 
+    `include "lv_param.vh"
     parameter END_OF_LIST          = 1
 )( 
     input  logic 		            i_wdg_scan_reg_en               ,
@@ -44,7 +40,6 @@ module lv_wdg_ctrl #(
 //==================================
 //local param delcaration
 //==================================
-localparam CLK_M                                =  48        ;
 localparam  WDG_250US_CYC_NUM                   =  250*CLK_M ; //one core clk cycle is (1000/48)ns, 250us has (250x1000)ns/(1000/48)ns = 250x48 cycle.
 localparam  WDG_500US_CYC_NUM                   =  500*CLK_M ;
 localparam WDG_1000US_CYC_NUM                   = 1000*CLK_M ;
