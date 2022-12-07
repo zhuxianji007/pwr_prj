@@ -40,14 +40,6 @@ module lv_wdg_ctrl #(
 //==================================
 //local param delcaration
 //==================================
-localparam  WDG_250US_CYC_NUM                   =  250*CLK_M ; //one core clk cycle is (1000/48)ns, 250us has (250x1000)ns/(1000/48)ns = 250x48 cycle.
-localparam  WDG_500US_CYC_NUM                   =  500*CLK_M ;
-localparam WDG_1000US_CYC_NUM                   = 1000*CLK_M ;
-localparam WDG_2000US_CYC_NUM                   = 2000*CLK_M ;
-localparam [3: 0] WDG_SCANREG_TH                = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM}; //TH = threshold
-localparam [3: 0] WDG_REFRESH_TH                = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM};
-localparam [3: 0] WDG_TIMEOUT_TH                = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM};
-localparam WDG_CNT_W                            = $clog2(WDG_2000US_CYC_NUM) ;
 localparam SCAN_REG_NUM                         = 8;
 localparam [SCAN_REG_NUM-1: 0] SCAN_REG_ADDR    = {7'h30, 7'h0B, 7'h0A, 7'h09, 7'h08, 7'h03, 7'h02, 7'h01} ;
 localparam SCAN_PTR_W                           = $clog2(SCAN_REG_NUM) ;
@@ -247,3 +239,4 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
