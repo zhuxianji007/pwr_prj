@@ -62,7 +62,7 @@ for(genvar i=0; i<DW; i=i+1) begin: REG_DATA_BLK
 	        reg_data[i] <= DEFAULT_VAL[i];
 	    end
   	    else begin
-	        reg_data[i] <= (wen & i_wdata[i]) ? 1'b0 : ((i_lgc_wen[i] & i_lgc_wdata[i]) ? 1'b1 : reg_data[i]);
+	        reg_data[i] <= (i_lgc_wen[i] & i_lgc_wdata[i]) ? 1'b1 : ((wen & i_wdata[i]) ? 1'b0 : reg_data[i]);
 	    end
     end
 end
@@ -78,4 +78,5 @@ assign o_rdata    = ren ? reg_data : {DW{1'b0}};
 //    
 // synopsys translate_on    
 endmodule
+
 
