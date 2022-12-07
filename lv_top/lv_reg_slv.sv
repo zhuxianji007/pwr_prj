@@ -81,23 +81,6 @@ module lv_reg_slv #(
     output logic [1:          0]    o_com_config1_wdgrefresh_config ,
     output logic [1:          0]    o_com_config1_wdgcrc_config     ,
 
-    output logic                    o_status1_bist_fail             ,
-    output logic                    o_status1_pwm_mmerr             ,
-    output logic                    o_status1_pwm_dterr             ,
-    output logic                    o_status1_wdg_err               ,
-    output logic                    o_status1_com_err               ,
-    output logic                    o_status1_crc_err               ,
-    output logic                    o_status1_spi_err               ,
-
-    output logic                    o_status1_hv_scp_flt            ,
-    output logic                    o_status1_hv_desat_flt          ,
-    output logic                    o_status1_hv_oc                 ,
-    output logic                    o_status1_hv_ot                 ,
-    output logic                    o_status1_hv_vcc_ov             ,
-    output logic                    o_status1_hv_vcc_uv             ,
-    output logic                    o_status1_lv_vsup_ov            ,
-    output logic                    o_status1_lv_vsup_uv            ,
-
     output logic [5:          0]    o_bgr_code_iso_bgr_trim         ,
     output logic                    o_ibias_coe_iso_efuse_bum_com   ,
     output logic [4:          0]    o_ibias_coe_iso_corner          ,
@@ -112,11 +95,16 @@ module lv_reg_slv #(
     output logic [3:          0]    o_iso_osc_jit_iso_tx_jit_adj    ,
     output logic [7:          0]    o_ana_reserved_reg_reserved     ,
     output logic [3:          0]    o_t_dead_time_tdt_tdt           ,
-    
-    //to mcu interrput
-    input  logic                    i_intb_hv_n                     ,
-    output logic                    o_intb_n                        ,
 
+    output logic [REG_DW-1:   0]    o_lv_reg_status1                ,
+    output logic [REG_DW-1:   0]    o_lv_reg_mask1                  ,
+    output logic [REG_DW-1:   0]    o_lv_reg_status2                ,
+    output logic [REG_DW-1:   0]    o_lv_reg_mask2                  ,
+    output logic [REG_DW-1:   0]    o_lv_reg_status3                ,
+    output logic [REG_DW-1:   0]    o_lv_reg_status4                ,
+    output logic [REG_DW-1:   0]    o_lv_reg_bist1                  ,
+    output logic [REG_DW-1:   0]    o_lv_reg_bist2                  ,
+    
     input  logic                    i_test_st_reg_en                ,
     input  logic                    i_cfg_st_reg_en                 ,
     input  logic                    i_spi_ctrl_reg_en               ,
@@ -401,13 +389,7 @@ rwc_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_status1_bist_fail = reg_status1[7:7] & ~reg_mask1[7:7];
-assign o_status1_pwm_mmerr = reg_status1[5:5] & ~reg_mask1[5:5];
-assign o_status1_pwm_dterr = reg_status1[4:4] & ~reg_mask1[4:4];
-assign o_status1_wdg_err   = reg_status1[3:3] & ~reg_mask1[3:3];
-assign o_status1_com_err   = reg_status1[2:2] & ~reg_mask1[2:2];
-assign o_status1_crc_err   = reg_status1[1:1] & ~reg_mask1[1:1];
-assign o_status1_spi_err   = reg_status1[0:0] & ~reg_mask1[0:0];
+assign o_lv_reg_status1 = reg_status1;
 
 //MASK1 REGISTER
 rw_reg #(
@@ -439,6 +421,8 @@ rw_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
+
+assign o_lv_reg_mask1 = reg_mask1;
 
 //STATUS2 REGISTER
 assign status2_lgc_wen = {i_int_hv_scp_flt, i_int_hv_desat_flt, i_int_hv_oc, i_int_hv_ot, 
@@ -472,14 +456,7 @@ rwc_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_status1_hv_scp_flt    = reg_status2[7:7] & ~reg_mask2[7:7];
-assign o_status1_hv_desat_flt  = reg_status2[6:6] & ~reg_mask2[6:6];
-assign o_status1_hv_oc         = reg_status2[5:5] & ~reg_mask2[5:5];
-assign o_status1_hv_ot         = reg_status2[4:4] & ~reg_mask2[4:4];
-assign o_status1_hv_vcc_ov     = reg_status2[3:3] & ~reg_mask2[3:3];
-assign o_status1_hv_vcc_uv     = reg_status2[2:2] & ~reg_mask2[2:2];
-assign o_status1_lv_vsup_ov    = reg_status2[1:1] & ~reg_mask2[1:1];
-assign o_status1_lv_vsup_uv    = reg_status2[0:0] & ~reg_mask2[0:0];
+assign o_lv_reg_status2 = reg_status2;
 
 //MASK2 REGISTER
 rw_reg #(
@@ -512,6 +489,8 @@ rw_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
+assign o_lv_reg_mask2 = reg_mask2;
+
 //STATUS3 REGISTER
 assign status3_in = {i_int_vrtmon, i_int_fsifo, i_int_pwma, i_int_pwm
                       i_int_fsstate, i_int_fsenb, i_int_intb_lv, i_int_intb_hv};
@@ -534,6 +513,8 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
+assign o_lv_reg_status3 = status3_in;
+
 //STATUS4 REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
@@ -553,6 +534,8 @@ ro_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
+
+assign o_lv_reg_status4 = i_fsm_status;
 
  //ADC1_DATA_LOW REGISTER
 ro_reg #(
@@ -654,6 +637,8 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
+assign o_lv_reg_bist1 = i_bist_rult[7:0];
+
  //BIST_RESULT2 REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
@@ -673,6 +658,8 @@ ro_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
+
+assign o_lv_reg_bist2 = i_bist_rult[15:8];
 
  //ADC_REQ REGISTER
 ro_reg #(
@@ -1178,20 +1165,6 @@ always_ff@(posedge i_clk or negedge rst_n) begin
     end
 end
 
-//interrupt proc
-assign intb_lv_n = ~(|((reg_status1 & reg_mask1) | (reg_status2 & reg_mask2)));
-
-always_ff@(posedge i_clk or negedge rst_n) begin
-    if(~rst_n) begin
-        o_intb_n <= 1'b1;
-    end
-    else begin
-        o_intb_n <= intb_lv_n & i_intb_hv_n;
-    end
-end
-
-
-
 // synopsys translate_off    
 //==================================
 //assertion
@@ -1199,6 +1172,9 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
 
 
 
