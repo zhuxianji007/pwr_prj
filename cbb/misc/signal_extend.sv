@@ -43,7 +43,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         vld_lock        <= 1'b1;
         vld_data_lock   <= i_vld_data;
     end
-    else if(cnt==EXTEND_CYC_NUM) begin
+    else if(cnt==(EXTEND_CYC_NUM-1)) begin
         vld_lock        <= 1'b0;
         vld_data_lock   <= 1'b0;
     end
