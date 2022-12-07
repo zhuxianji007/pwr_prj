@@ -67,7 +67,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         o_done       <= 1'b0;
 	end
   	else begin
-	    o_vld        <= i_vld | vld_lock;
+        o_vld        <= i_vld | vld_lock;
         o_vld_data   <= (i_vld & i_vld_data) | (vld_lock & vld_data_lock);
         o_done       <= (cnt==(EXTEND_CYC_NUM-1));    
     end
