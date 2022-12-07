@@ -28,3 +28,14 @@ parameter OWT_END_TAIL_ST       = OWT_FSM_ST_W'(7)                              
 parameter OWT_ABORT_ST          = OWT_FSM_ST_W'(8)                                          ,
 
 parameter CLK_M                 =  48                                                       ,
+parameter  WDG_250US_CYC_NUM    =  250*CLK_M                                                , //one core clk cycle is (1000/48)ns, 250us has (250x1000)ns/(1000/48)ns = 250x48 cycle.
+parameter  WDG_500US_CYC_NUM    =  500*CLK_M                                                ,
+parameter WDG_1000US_CYC_NUM    = 1000*CLK_M                                                ,
+parameter WDG_2000US_CYC_NUM    = 2000*CLK_M                                                ,
+parameter [3: 0] WDG_SCANREG_TH = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM}, //TH = threshold
+parameter [3: 0] WDG_REFRESH_TH = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter [3: 0] WDG_TIMEOUT_TH = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter [3: 0] WDG_INTB_TH    = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter WDG_CNT_W             = $clog2(WDG_2000US_CYC_NUM) ;
+
+parameter PWM_INTB_EXT_CYC_NUM  = 8,
