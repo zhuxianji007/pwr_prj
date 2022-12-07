@@ -48,6 +48,13 @@ module lv_reg_access_ctrl #(
     input  logic [REG_DW-1:     0]  i_reg_arb_rdata         ,
     input  logic [REG_CRC_W-1:  0]  i_reg_arb_rcrc          ,
 
+    input  logic [REG_DW-1:     0]  i_lvhv_reg_status1      ,
+    input  logic [REG_DW-1:     0]  i_lvhv_reg_status2      ,
+    input  logic [REG_DW-1:     0]  i_lvhv_reg_status3      ,
+    input  logic [REG_DW-1:     0]  i_lvhv_reg_status4      ,
+    input  logic [REG_DW-1:     0]  i_lvhv_reg_bist1        ,
+    input  logic [REG_DW-1:     0]  i_lvhv_reg_bist2        ,
+
     input  logic                    i_clk                   ,
     input  logic                    i_rst_n
  );
@@ -60,20 +67,25 @@ localparam COM_WR_REG_NUM                        = 7                            
 localparam COM_RD_REG_NUM                        = 7                                            ;
 localparam [COM_WR_REG_NUM-1: 0] COM_WR_REG_ADDR = {7'h0B,7'h0A,7'h09,7'h08,7'h03,7'h02,7'h01}  ;
 localparam [COM_RD_REG_NUM-1: 0] COM_RD_REG_ADDR = {7'h1F,7'h15,7'h14,7'h0D,7'h0C,7'h0A,7'h08}  ;
+localparam REG_DATA_SEL_W                        = $clog2(COM_RD_REG_NUM)                       ;
 //==================================
 //var delcaration
 //==================================
-logic               wdg_scan_grant          ;
-logic [2:       0]  wdg_scan_grant_ff       ;
-logic               wdg_scan_grant_mask     ;
-logic               trig_owt_wr_dgt_reg     ;
-logic               trig_owt_rd_dgt_reg     ;//digital
-logic               trig_owt_acc_ang_reg    ;//analog
-logic               owt_wr_ack              ;
-logic               owt_rd_ack              ;
-logic               spi_reg_wr_req_ff       ;
-logic               spi_reg_rd_req_ff       ;
-logic [REG_DW-1: 0] reg_spi_data            ;                  
+logic                                       wdg_scan_grant          ;
+logic [2:                   0]              wdg_scan_grant_ff       ;
+logic                                       wdg_scan_grant_mask     ;
+logic                                       trig_owt_wr_dgt_reg     ;
+logic                                       trig_owt_rd_dgt_reg     ;//digital
+logic                                       trig_owt_acc_ang_reg    ;//analog
+logic                                       owt_wr_ack              ;
+logic                                       owt_rd_ack              ;
+logic                                       spi_reg_wr_req_ff       ;
+logic                                       spi_reg_rd_req_ff       ;
+logic [REG_DW-1:            0]              reg_spi_data            ;
+logic                                       hit_com_rd_reg          ;
+logic [COM_RD_REG_NUM-1:    0][REG_DW-1: 0] com_rd_reg_data         ;
+logic [REG_DATA_SEL_W-1:    0]              reg_data_sel            ;
+logic                                       owt_spi_rack_ff         ;                 
 //==================================
 //main code
 //==================================
@@ -141,11 +153,21 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        owt_spi_rack_ff <= 1'b0;
+    end
+    else begin
+        owt_spi_rack_ff <= i_owt_spi_rack;
+    end
+end
+
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_spi_owt_rd_req <= 1'b0;
     end
-    else if(i_owt_spi_rack) begin
+    else if(owt_spi_rack_ff) begin
         o_spi_owt_rd_req <= 1'b0;
     end
     else begin
@@ -237,12 +259,23 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else;
 end
 
-assign reg_spi_data   = i_spi_reg_wr_req ? o_arb_reg_wdata :
+assign com_rd_reg_data = {8'h0, i_lvhv_reg_bist2, i_lvhv_reg_bist1, i_lvhv_reg_status4, 
+                          i_lvhv_reg_status3, i_lvhv_reg_status2, i_lvhv_reg_status1};
 
-assign o_reg_spi_wack = i_owt_spi_wack | (~trig_owt_wr_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_arb_wack)                        ; 
-assign o_reg_spi_rack = i_owt_spi_rack | (~trig_owt_rd_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_arb_rack & ~wdg_scan_grant_ff[2]);
-assign o_reg_spi_data = reg_spi_data                                                                                            ;
-assign o_reg_spi_addr = o_arb_reg_addr                                                                                          ;
+always_comb begin: REG_DATA_SEL_BLK
+    reg_data_sel = REG_DATA_SEL_W'(0);
+    for(integer i=0; i<COM_RD_REG_NUM; i=i+1) begin: GEN_REG_DATA_SEL
+        reg_data_sel = (i_spi_reg_addr==COM_RD_REG_ADDR[i]) ? i[REG_DATA_SEL_W-1: 0] : REG_DATA_SEL_W'(0);
+    end
+end                          
+
+assign hit_com_rd_reg  = trig_owt_rd_dgt_reg;
+assign reg_spi_data    = i_spi_reg_wr_req ? o_arb_reg_wdata : (hit_com_rd_reg ? com_rd_reg_data[reg_data_sel] : i_reg_arb_rdata);
+
+assign o_reg_spi_wack = i_owt_spi_wack  | (~trig_owt_wr_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_arb_wack)                        ; 
+assign o_reg_spi_rack = owt_spi_rack_ff | (~trig_owt_rd_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_arb_rack & ~wdg_scan_grant_ff[2]);
+assign o_reg_spi_data = reg_spi_data                                                                                             ;
+assign o_reg_spi_addr = o_arb_reg_addr                                                                                           ;
 // synopsys translate_off    
 //==================================
 //assertion
@@ -250,3 +283,4 @@ assign o_reg_spi_addr = o_arb_reg_addr                                          
 //    
 // synopsys translate_on    
 endmodule
+
