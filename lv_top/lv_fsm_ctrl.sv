@@ -46,6 +46,7 @@ module lv_fsm_ctrl #(
     output logic                            o_test_st_reg_en    ,//when in test_st support reg read & write.
     output logic                            o_spi_ctrl_reg_en   ,//when spi enable support reg read & write.
     output logic                            o_bist_en           ,
+    output logic                            o_fsm_ang_test_en   ,//ctrl analog mdl into test mode.
 
     output logic                            o_intb_n            ,
 
@@ -335,13 +336,16 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_test_st_reg_en <= 1'b0;
+        o_test_st_reg_en  <= 1'b0;
+        o_fsm_ang_test_en <= 1'b0;
     end
     else if(lv_ctrl_nxt_st==CFG_ST) begin
-        o_test_st_reg_en <= 1'b1;
+        o_test_st_reg_en  <= 1'b1;
+        o_fsm_ang_test_en <= 1'b1;
     end
     else begin
-        o_test_st_reg_en <= 1'b0;
+        o_test_st_reg_en  <= 1'b0;
+        o_fsm_ang_test_en <= 1'b0;
     end
 end
 
@@ -349,7 +353,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_bist_en <= 1'b0;
     end
-    else if(lv_ctrl_nxt_st==) begin
+    else if(lv_ctrl_nxt_st==BIST_ST) begin
         o_bist_en <= 1'b1;
     end
     else begin
@@ -378,6 +382,11 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
+
+
 
 
 
