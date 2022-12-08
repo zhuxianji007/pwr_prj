@@ -12,7 +12,7 @@ module lv_wdg_ctrl #(
     `include "lv_param.vh"
     parameter END_OF_LIST          = 1
 )( 
-    input  logic 		            i_wdg_scan_reg_en               ,
+    input  logic                    i_wdg_scan_reg_en               ,
     output logic                    o_wdg_scan_reg_rd_req           ,
     output logic [REG_AW-1:     0]  o_wdg_scan_reg_addr             ,
     input  logic                    i_reg_wdg_scan_ack              ,
@@ -277,6 +277,7 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
 
 
 
