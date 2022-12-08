@@ -12,7 +12,8 @@
 //Rev.level     Date          Code_by         Contents
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
-module lv_reg_slv #(
+module lv_reg_slv import lv_pkg::*; 
+#(
     `include "lv_param.vh"
     parameter END_OF_LIST = 1
 )(
@@ -1172,6 +1173,20 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
