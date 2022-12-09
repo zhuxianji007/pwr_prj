@@ -39,3 +39,6 @@ parameter [3: 0] WDG_INTB_TH    = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_5
 parameter WDG_CNT_W             = $clog2(WDG_2000US_CYC_NUM) ;
 
 parameter PWM_INTB_EXT_CYC_NUM  = 8,
+parameter HV_DV_ID              = 4'(0),
+parameter LV_DV_ID              = 4'(0),
+
