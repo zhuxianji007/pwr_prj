@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module hv_adc_sample #(
-    include "hv_param.vh"
+    include "hv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic 		       i_ang_dgt_adc1_rdy   , //analog to digtial

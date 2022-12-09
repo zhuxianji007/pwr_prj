@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module hv_abist #(
-    `include "com_param.vh"
+    `include "com_param.svh"
     parameter END_OF_LIST          = 1
 )( 
     input  logic 		        i_bist_hv_ov             ,

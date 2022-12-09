@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module hv_pwm_intb_encode #(
-    `include "hv_param.vh"
+    `include "hv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic           i_hv_intb_n                      ,
