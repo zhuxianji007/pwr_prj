@@ -30,7 +30,6 @@ module lv_reg_slv import lv_pkg::*;
     output logic [REG_CRC_W-1:  0]    o_reg_spi_rcrc                ,
     
     //inner flop-flip data
-    input  logic [REG_DW-1:   0]    i_lvhv_device_id                ,
     input  logic                    i_int_bist_fail                 ,
     input  logic                    i_int_pwm_mmerr                 ,
     input  logic                    i_int_pwm_dterr                 ,
@@ -39,48 +38,33 @@ module lv_reg_slv import lv_pkg::*;
     input  logic                    i_int_crc_err                   ,
     input  logic                    i_int_spi_err                   ,
 
-    input logic                     i_int_hv_scp_flt                ,
-    input logic                     i_int_hv_desat_flt              ,
-    input logic                     i_int_hv_oc                     ,
-    input logic                     i_int_hv_ot                     ,
-    input logic                     i_int_hv_vcc_ov                 ,
-    input logic                     i_int_hv_vcc_uv_n               ,
     input logic                     i_int_lv_vsup_ov                ,
-    input logic                     i_int_lv_vsup_uv_n              ,
+    input logic                     i_int_lv_vsup_uv                ,
 
-    input logic                     i_int_vrtmon                    ,
-    input logic                     i_int_fsifo                     ,
-    input logic                     i_int_pwma                      ,
-    input logic                     i_int_pwm                       ,
-    input logic                     i_int_fsstate                   ,
-    input logic                     i_int_fsenb                     ,
-    input logic                     i_int_intb_lv                   ,
-    input logic                     i_int_intb_hv                   ,
+    input logic                     i_vrtmon                        ,
+    input logic                     i_io_fsifo                      ,
+    input logic                     i_io_pwma                       ,
+    input logic                     i_io_pwm                        ,
+    input logic                     i_io_fsstate                    ,
+    input logic                     i_io_fsenb                      ,
+    input logic                     i_io_intb_lv                    ,
+    input logic                     i_io_intb_hv                    ,
 
-    input logic [REG_DW-1:    0]    i_fsm_status                    ,   
+    input logic [REG_DW-1:    0]    i_fsm_state                     ,   
     input logic [ADC_DW-1:    0]    i_adc1_data                     ,
     input logic [ADC_DW-1:    0]    i_adc2_data                     ,
     input logic [15:          0]    i_bist_rult                     ,
     input logic [REG_DW-1:    0]    i_adc_status                    ,
 
     //output to inner logic
-    output logic                    o_mode_efuse_done               ,
-    output logic                    o_mode_adc2_en                  ,
-    output logic                    o_mode_adc1_en                  ,
-    output logic                    o_mode_fsiso_en                 ,
-    output logic                    o_mode_bist_en                  ,
-    output logic                    o_mode_cfg_en                   ,
-    output logic                    o_mode_normal_en                ,
-    output logic                    o_mode_reset_en                 ,
+    output str_reg_mode             o_reg_mode                      ,
+    output str_reg_com_config1      o_reg_com_config1               ,
+    output str_reg_com_config2      o_reg_com_config2               ,
+    output str_reg_status1          o_reg_status1                   ,
+    output str_reg_mask1            o_reg_mask1                     ,
+    output str_reg_status2          o_reg_status2                   ,
+    output str_reg_mask2            o_reg_mask2                     ,
 
-    output logic                    o_com_config0_rtmon             ,
-    output logic                    o_com_config0_comerr_mode       ,
-    output logic [3:          0]    o_com_config0_comerr_config     ,
-
-    output logic [1:          0]    o_com_config1_wdgintb_config    ,
-    output logic [1:          0]    o_com_config1_wdgtmo_config     ,
-    output logic [1:          0]    o_com_config1_wdgrefresh_config ,
-    output logic [1:          0]    o_com_config1_wdgcrc_config     ,
 
     output logic [5:          0]    o_bgr_code_iso_bgr_trim         ,
     output logic                    o_ibias_coe_iso_efuse_bum_com   ,
@@ -96,15 +80,6 @@ module lv_reg_slv import lv_pkg::*;
     output logic [3:          0]    o_iso_osc_jit_iso_tx_jit_adj    ,
     output logic [7:          0]    o_ana_reserved_reg_reserved     ,
     output logic [3:          0]    o_t_dead_time_tdt_tdt           ,
-
-    output logic [REG_DW-1:   0]    o_lv_reg_status1                ,
-    output logic [REG_DW-1:   0]    o_lv_reg_mask1                  ,
-    output logic [REG_DW-1:   0]    o_lv_reg_status2                ,
-    output logic [REG_DW-1:   0]    o_lv_reg_mask2                  ,
-    output logic [REG_DW-1:   0]    o_lv_reg_status3                ,
-    output logic [REG_DW-1:   0]    o_lv_reg_status4                ,
-    output logic [REG_DW-1:   0]    o_lv_reg_bist1                  ,
-    output logic [REG_DW-1:   0]    o_lv_reg_bist2                  ,
     
     input  logic                    i_test_st_reg_en                ,
     input  logic                    i_cfg_st_reg_en                 ,
@@ -112,18 +87,19 @@ module lv_reg_slv import lv_pkg::*;
     input  logic                    i_efuse_ctrl_reg_en             ,
     input  logic                    i_clk                           ,
     input  logic                    i_hrst_n                        ,
-    input  logic                    i_srst_n                        ,
     output logic                    o_rst_n                     
 );
 //==================================
 //local param delcaration
 //==================================
+logic                  srst_n                   ;
 logic                  rst_n                    ;
 
 logic                  spi_reg_wen              ;
 logic                  spi_reg_ren              ;
 logic [REG_AW-1:    0] spi_reg_addr             ;
 logic [REG_DW-1:    0] spi_reg_wdata            ;
+logic [REG_CRC_W-1: 0] spi_reg_wcrc             ;
 logic [REG_DW-1:    0] reg_spi_rdata            ;
 logic [REG_CRC_W-1: 0] reg_spi_rcrc             ;
 
@@ -134,8 +110,8 @@ logic                  intb_lv_n                ;
 
 logic [REG_DW-1:    0] rdata_lvhv_device_id     ;
 logic [REG_DW-1:    0] rdata_mode               ;
-logic [REG_DW-1:    0] rdata_com_config0        ;
 logic [REG_DW-1:    0] rdata_com_config1        ;
+logic [REG_DW-1:    0] rdata_com_config2        ;
 logic [REG_DW-1:    0] rdata_status1            ;
 logic [REG_DW-1:    0] rdata_mask1              ;
 logic [REG_DW-1:    0] rdata_status2            ;
@@ -166,8 +142,8 @@ logic [REG_DW-1:    0] rdata_t_dead_time        ;
 
 
 logic [REG_DW-1:    0] reg_mode                 ;
-logic [REG_DW-1:    0] reg_com_config0          ;
 logic [REG_DW-1:    0] reg_com_config1          ;
+logic [REG_DW-1:    0] reg_com_config2          ;
 logic [REG_DW-1:    0] reg_status1              ;
 logic [REG_DW-1:    0] reg_mask1                ;
 logic [REG_DW-1:    0] reg_status2              ;
@@ -190,9 +166,11 @@ logic [REG_DW-1:    0] reg_t_dead_time          ;
 //==================================
 //main code
 //==================================
+assign srst_n = reg_mode[0:0];
+
 rstn_merge U_RSTN_MERGE(
     .i_hrst_n   (i_hrst_n),
-    .i_srst_n   (i_srst_n),
+    .i_srst_n   (srst_n  ),
     .o_rst_n    (rst_n   )
 );
 assign o_rst_n = rst_n;
@@ -212,7 +190,7 @@ ro_reg #(
     .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
     .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
-    .i_ff_data            (i_lvhv_device_id                             ),
+    .i_ff_data            ({HV_DV_ID, LV_DV_ID}                         ),
     .o_rdata              (rdata_lvhv_device_id                         ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
@@ -223,7 +201,7 @@ rw_reg #(
     .DW                     (7          ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
-    .DEFAULT_VAL            (7'h00      ),
+    .DEFAULT_VAL            (7'h08      ),
     .REG_ADDR               (7'h01      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
@@ -279,21 +257,14 @@ rw_reg #(
     .i_rst_n              (hrst_n                                       )
 );
 
-assign o_mode_efuse_done = reg_mode[7:7];
-assign o_mode_adc2_en    = reg_mode[6:6];
-assign o_mode_adc1_en    = reg_mode[5:5];
-assign o_mode_fsiso_en   = reg_mode[4:4];
-assign o_mode_bist_en    = reg_mode[3:3];
-assign o_mode_cfg_en     = reg_mode[2:2];
-assign o_mode_normal_en  = reg_mode[1:1];
-assign o_mode_reset_en   = reg_mode[0:0];
+assign o_reg_mode = reg_mode;
 
-//COM_CONFIG0 REGISTER
+//COM_CONFIG1 REGISTER
 rw_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
-    .DEFAULT_VAL            (8'h0A      ),
+    .DEFAULT_VAL            (8'h2B      ),
     .REG_ADDR               (7'h02      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
@@ -302,41 +273,7 @@ rw_reg #(
     .SUPPORT_SPI_EN_WR      (1'b0       ),
     .SUPPORT_SPI_EN_RD      (1'b1       ),
     .SUPPORT_EFUSE_WR       (1'b0       )
-)U_COM_CONFIG(
-    .i_ren                (spi_reg_ren                                  ),
-    .i_wen                (spi_reg_wen                                  ),
-    .i_test_st_reg_en     (i_test_st_reg_en                             ),
-    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
-    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
-    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
-    .i_addr               (spi_reg_addr                                 ),
-    .i_wdata              (spi_reg_wdata                                ),
-    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
-    .o_rdata              (rdata_com_config0                            ),
-    .o_reg_data           (reg_com_config0                              ),
-    .o_rcrc               (                                             ),
-    .i_clk                (i_clk                                        ),
-    .i_rst_n              (rst_n                                        )
-);
-assign o_com_config0_rtmon          = reg_com_config0[7:7];
-assign o_com_config0_comerr_mode    = reg_com_config0[6:6];
-assign o_com_config0_comerr_config  = reg_com_config0[3:0];
-
-//COM_CONFIG1 REGISTER
-rw_reg #(
-    .DW                     (REG_DW     ),
-    .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
-    .DEFAULT_VAL            (8'hFF      ),
-    .REG_ADDR               (7'h03      ),
-    .SUPPORT_TEST_MODE_WR   (1'b1       ),
-    .SUPPORT_TEST_MODE_RD   (1'b1       ),
-    .SUPPORT_CFG_MODE_WR    (1'b1       ),
-    .SUPPORT_CFG_MODE_RD    (1'b0       ),
-    .SUPPORT_SPI_EN_WR      (1'b0       ),
-    .SUPPORT_SPI_EN_RD      (1'b1       ),
-    .SUPPORT_EFUSE_WR       (1'b0       )
-)U_COM_CONFIG(
+)U_COM_CONFIG1(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
     .i_test_st_reg_en     (i_test_st_reg_en                             ),
@@ -353,10 +290,40 @@ rw_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_com_config1_wdgintb_config    = reg_com_config1[7:6];
-assign o_com_config1_wdgtmo_config     = reg_com_config1[5:4];
-assign o_com_config1_wdgrefresh_config = reg_com_config1[3:2];
-assign o_com_config1_wdgcrc_config     = reg_com_config1[1:0];
+assign o_reg_com_config1 = reg_com_config1;
+
+//COM_CONFIG2 REGISTER
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'hFF      ),
+    .REG_ADDR               (7'h03      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_COM_CONFIG2(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .o_rdata              (rdata_com_config2                            ),
+    .o_reg_data           (reg_com_config2                              ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_com_config2 = reg_com_config2;
 
 //STATUS1 REGISTER
 assign status1_lgc_wen = {i_int_bist_fail, 1'b0, i_int_pwm_mmerr, i_int_pwm_dterr, 
@@ -390,7 +357,7 @@ rwc_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_status1 = reg_status1;
+assign o_reg_status1 = reg_status1;
 
 //MASK1 REGISTER
 rw_reg #(
@@ -415,7 +382,7 @@ rw_reg #(
     .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
-    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
     .o_rdata              (rdata_mask1                                  ),
     .o_reg_data           (reg_mask1                                    ),
     .o_rcrc               (                                             ),
@@ -423,11 +390,11 @@ rw_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_mask1 = reg_mask1;
+assign o_reg_mask1 = reg_mask1;
 
 //STATUS2 REGISTER
-assign status2_lgc_wen = {i_int_hv_scp_flt, i_int_hv_desat_flt, i_int_hv_oc, i_int_hv_ot, 
-                           i_int_hv_vcc_ov, i_int_hv_vcc_uv_n, i_int_lv_vsup_ov, i_int_lv_vsup_uv_n};
+assign status2_lgc_wen = {6'b0, i_int_lv_vsup_ov, i_int_lv_vsup_uv};
+
 rwc_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -457,7 +424,7 @@ rwc_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_status2 = reg_status2;
+assign o_reg_status2 = reg_status2;
 
 //MASK2 REGISTER
 rw_reg #(
@@ -482,7 +449,7 @@ rw_reg #(
     .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
-    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
     .o_rdata              (rdata_mask2                                  ),
     .o_reg_data           (reg_mask2                                    ),
     .o_rcrc               (                                             ),
@@ -490,11 +457,11 @@ rw_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_mask2 = reg_mask2;
+assign o_reg_mask2 = reg_mask2;
 
 //STATUS3 REGISTER
-assign status3_in = {i_int_vrtmon, i_int_fsifo, i_int_pwma, i_int_pwm
-                      i_int_fsstate, i_int_fsenb, i_int_intb_lv, i_int_intb_hv};
+assign status3_in = {i_vrtmon, i_io_fsifo, i_io_pwma, i_io_pwm
+                      i_io_fsstate, i_io_fsenb, i_io_intb_lv, i_io_intb_hv};
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -514,8 +481,6 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_status3 = status3_in;
-
 //STATUS4 REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
@@ -530,15 +495,13 @@ ro_reg #(
     .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
     .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
-    .i_ff_data            (i_fsm_status                                 ),
+    .i_ff_data            (i_fsm_state                                  ),
     .o_rdata              (rdata_status4                                ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_status4 = i_fsm_status;
-
- //ADC1_DATA_LOW REGISTER
+//ADC1_DATA_LOW REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -558,7 +521,7 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
- //ADC1_DATA_HIG REGISTER
+//ADC1_DATA_HIG REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -598,7 +561,7 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
- //ADC2_DATA_HIG REGISTER
+//ADC2_DATA_HIG REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -618,7 +581,7 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
- //BIST_RESULT1 REGISTER
+//BIST_RESULT1 REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -638,9 +601,8 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_bist1 = i_bist_rult[7:0];
 
- //BIST_RESULT2 REGISTER
+//BIST_RESULT2 REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -660,9 +622,7 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_lv_reg_bist2 = i_bist_rult[15:8];
-
- //ADC_REQ REGISTER
+//ADC_REQ REGISTER
 ro_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -682,7 +642,7 @@ ro_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
- //DIE1_ID REGISTER
+//DIE1_ID REGISTER
 rw_reg #(
     .DW                     (3          ),
     .AW                     (REG_AW     ),
@@ -1138,6 +1098,7 @@ assign spi_reg_ren   = i_spi_reg_ren    ;
 assign spi_reg_wen   = i_spi_reg_wen    ;
 assign spi_reg_addr  = i_spi_reg_addr   ;
 assign spi_reg_wdata = i_spi_reg_wdata  ;
+assign spi_reg_wcrc  = i_spi_reg_wcrc   ;
 
 assign o_reg_spi_wack= spi_reg_wen      ;
 
@@ -1151,7 +1112,7 @@ always_ff@(posedge i_clk or negedge rst_n) begin
     end
 end
 
-assign reg_spi_rdata = rdata_lvhv_device_id | rdata_mode | rdata_com_config0 | rdata_com_config1 | rdata_status1 | rdata_mask1 | rdata_status2 | rdata_mask2
+assign reg_spi_rdata = rdata_lvhv_device_id | rdata_mode | rdata_com_config1 | rdata_com_config2 | rdata_status1 | rdata_mask1 | rdata_status2 | rdata_mask2
                        rdata_status3 | rdata_status4 | rdata_adc1_data_low | rdata_adc1_data_hig | rdata_adc2_data_low | rdata_adc2_data_hig |
                        rdata_bist_rult1 | rdata_bist_rult2 | rdata_adc_status | rdata_die1_id | rdata_die2_id | rdata_die3_id | rdata_bgr_trim | rdata_ibias_coe_iso |
                        rdata_osc48m | rdata_iso_oscb_freq_adj | rdata_iso_reserved_reg | rdata_iso_amp_ibias | rdata_iso_rx_demo | rdata_iso_test_sw | rdata_iso_osc_jit |
@@ -1173,6 +1134,28 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
