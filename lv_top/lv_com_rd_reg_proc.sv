@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module lv_com_rd_reg_proc #(
-    `include "lv_param.vh"
+    `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic [REG_DW-1:   0]    i_lv_reg_status1                ,

@@ -14,7 +14,7 @@
 //=============================================================
 module lv_reg_slv import lv_pkg::*; 
 #(
-    `include "lv_param.vh"
+    `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )(
     //spi reg access interface 

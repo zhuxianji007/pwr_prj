@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module lv_owt_rx_ctrl #(
-    `include "lv_param.vh"
+    `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic                            i_hv_lv_owt_rx      ,

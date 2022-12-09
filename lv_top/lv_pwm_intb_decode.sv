@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module lv_pwm_intb_decode #(
-    `include "lv_param.vh"
+    `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic           i_hv_pwm_intb_n                  ,

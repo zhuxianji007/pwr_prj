@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module lv_dgt_pwm_ctrl #(
-    include "lv_param.vh"
+    include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic 		   i_ang_dgt_pwm_wv     , //analog pwm ctrl to digtial pwm ctrl pwm wave
