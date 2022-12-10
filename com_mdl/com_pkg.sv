@@ -99,6 +99,20 @@ package com_pkg;
         logic [3:       0]      lv_state                    ;        
     } str_reg_status4;
 
+    typedef struct packed{
+        logic                   efuse_mode                  ;
+        logic [6:       0]      efuse_bit_addr              ;        
+    } str_reg_efuse_config;
+
+    typedef struct packed{
+        logic [7:       4]      rsv                         ;
+        logic [3:       3]      spi_read_efuse_en           ;
+        logic [2:       2]      efuse_wr                    ;
+        logic [1:       1]      efuse_rd                    ;
+        logic [0:       0]      efuse_op_done               ;         
+    } str_reg_efuse_status;
+
 endpackage
 
 `endif //COM_PKG_SV
+
