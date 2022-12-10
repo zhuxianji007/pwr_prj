@@ -45,16 +45,18 @@ module rww_reg #(
 //var delcaration
 //==================================
 logic           wen     ;
+logic           lgc_wen ;
 logic           ren     ;
 logic           hit     ;
 logic [DW-1: 0] reg_data;
 //==================================
 //main code
 //==================================
-assign hit = (i_addr==REG_ADDR);
-assign wen = i_wen & hit & ((i_test_st_reg_en & SUPPORT_TEST_MODE_WR) | (i_cfg_st_reg_en & SUPPORT_CFG_MODE_WR) | (i_spi_ctrl_reg_en & SUPPORT_SPI_EN_WR) | (i_efuse_ctrl_reg_en & SUPPORT_EFUSE_WR));
-assign ren = i_ren & hit & ((i_test_st_reg_en & SUPPORT_TEST_MODE_RD) | (i_cfg_st_reg_en & SUPPORT_CFG_MODE_RD) | (i_spi_ctrl_reg_en & SUPPORT_SPI_EN_RD));
-  
+assign hit      = (i_addr==REG_ADDR);
+assign wen      = i_wen & hit & ((i_test_st_reg_en & SUPPORT_TEST_MODE_WR) | (i_cfg_st_reg_en & SUPPORT_CFG_MODE_WR) | (i_spi_ctrl_reg_en & SUPPORT_SPI_EN_WR));
+assign ren      = i_ren & hit & ((i_test_st_reg_en & SUPPORT_TEST_MODE_RD) | (i_cfg_st_reg_en & SUPPORT_CFG_MODE_RD) | (i_spi_ctrl_reg_en & SUPPORT_SPI_EN_RD));
+assign lgc_we   = i_lgc_wen & (i_efuse_ctrl_reg_en & SUPPORT_EFUSE_WR);
+
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         reg_data <= DEFAULT_VAL;
@@ -62,7 +64,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else if(wen) begin
         reg_data <= i_wdata;
     end
-    else if(i_lgc_wen) begin
+    else if(lgc_we) begin
         reg_data <= i_lgc_wdata;
     end
     else;
@@ -78,5 +80,8 @@ assign o_rdata    = ren ? reg_data : {DW{1'b0}};
 //    
 // synopsys translate_on    
 endmodule
+
+
+
 
 
