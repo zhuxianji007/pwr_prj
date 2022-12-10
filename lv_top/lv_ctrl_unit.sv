@@ -1,5 +1,5 @@
 //============================================================
-//Module   : lv_fsm_ctrl
+//Module   : lv_ctrl_unit
 //Function :  
 //File Tree: 
 //-------------------------------------------------------------
@@ -8,7 +8,7 @@
 //Rev.level     Date          Code_by         Contents
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
-module lv_fsm_ctrl #(
+module lv_ctrl_unit #(
     `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
