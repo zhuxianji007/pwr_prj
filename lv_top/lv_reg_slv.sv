@@ -56,6 +56,9 @@ module lv_reg_slv import lv_pkg::*;
     input logic                                         i_io_intb_lv                    ,
     input logic                                         i_io_intb_hv                    ,
 
+    input  str_reg_efuse_config                         i_reg_die2_efuse_config         ,
+    input  str_reg_efuse_status                         i_reg_die2_efuse_status         ,
+
     input logic [REG_DW-1:         0]                   i_fsm_state                     ,   
     input logic [ADC_DW-1:         0]                   i_adc1_data                     ,
     input logic [ADC_DW-1:         0]                   i_adc2_data                     ,
@@ -75,8 +78,6 @@ module lv_reg_slv import lv_pkg::*;
     output str_reg_mask2                                o_reg_mask2                     ,
     output str_reg_efuse_config                         o_reg_die1_efuse_config         ,
     output str_reg_efuse_status                         o_reg_die1_efuse_status         ,
-    output str_reg_efuse_config                         o_reg_die2_efuse_config         ,
-    output str_reg_efuse_status                         o_reg_die2_efuse_status         ,
 
     output str_reg_iso_bgr_trim                         o_reg_iso_bgr_trim              ,
     output str_reg_iso_con_ibias_trim                   o_reg_iso_con_ibias_trim        ,
@@ -115,6 +116,21 @@ logic                  com_reg_rack             ;
 logic [REG_DW-1:    0] com_reg_rdata            ;
 logic [REG_CRC_W-1: 0] com_reg_rcrc             ;
 
+logic [REG_DW-1:    0] status3_in               ;
+
+logic [REG_DW-1:    0] rdata_die1_efuse_config  ;
+logic [REG_DW-1:    0] rdata_die1_efuse_status  ;
+logic [REG_DW-1:    0] rdata_die2_efuse_config  ;
+logic [REG_DW-1:    0] rdata_die2_efuse_status  ;
+logic [REG_DW-1:    0] rdata_status3            ;
+logic [REG_DW-1:    0] rdata_status4            ;
+logic [REG_DW-1:    0] rdata_adc1_data_low      ;
+logic [REG_DW-1:    0] rdata_adc1_data_hig      ;
+logic [REG_DW-1:    0] rdata_adc2_data_low      ;
+logic [REG_DW-1:    0] rdata_adc2_data_hig      ;
+logic [REG_DW-1:    0] rdata_bist_rult1         ;
+logic [REG_DW-1:    0] rdata_bist_rult2         ;
+logic [REG_DW-1:    0] rdata_adc_status         ;
 logic [REG_DW-1:    0] rdata_die1_id            ;
 logic [REG_DW-1:    0] rdata_die2_id            ;
 logic [REG_DW-1:    0] rdata_die3_id            ;
@@ -129,7 +145,10 @@ logic [REG_DW-1:    0] rdata_iso_test_sw        ;
 logic [REG_DW-1:    0] rdata_iso_osc_jit        ;
 logic [REG_DW-1:    0] rdata_ana_reserved_reg   ;
 logic [REG_DW-1:    0] rdata_config0_t_deat_time;
+logic [REG_CRC_W-1: 0] rcrc_config0_t_deat_time ;
 
+logic [REG_DW-1:    0] reg_die1_efuse_config    ;
+logic [REG_DW-1:    0] reg_die1_efuse_status    ;
 logic [REG_DW-1:    0] reg_die1_id              ;
 logic [REG_DW-1:    0] reg_die2_id              ;
 logic [REG_DW-1:    0] reg_die3_id              ;
@@ -179,20 +198,6 @@ com_reg_bank U_LV_COM_REG_BANK(
     .i_int_lv_vsup_ov              (i_int_lv_vsup_ov        ),
     .i_int_lv_vsup_uv              (i_int_lv_vsup_uv        ),
 
-    .i_vrtmon                      (i_vrtmon                ),
-    .i_io_fsifo                    (i_io_fsifo              ),
-    .i_io_pwma                     (i_io_pwma               ),
-    .i_io_pwm                      (i_io_pwm                ),
-    .i_io_fsstate                  (i_io_fsstate            ),
-    .i_io_fsenb                    (i_io_fsenb              ),
-    .i_io_intb_lv                  (i_io_intb_lv            ),
-    .i_io_intb_hv                  (i_io_intb_hv            ),
-
-    .i_fsm_state                   (i_fsm_state             ),   
-    .i_adc1_data                   (i_adc1_data             ),
-    .i_adc2_data                   (i_adc2_data             ),
-    .i_bist_rult                   (i_bist_rult             ),
-
     .o_reg_mode                    (o_reg_mode              ),
     .o_reg_com_config1             (o_reg_com_config1       ),
     .o_reg_com_config2             (o_reg_com_config2       ),
@@ -200,10 +205,6 @@ com_reg_bank U_LV_COM_REG_BANK(
     .o_reg_mask1                   (o_reg_mask1             ),
     .o_reg_status2                 (o_reg_status2           ),
     .o_reg_mask2                   (o_reg_mask2             ),
-    .o_reg_die1_efuse_config       (o_reg_die1_efuse_config ),
-    .o_reg_die1_efuse_status       (o_reg_die1_efuse_status ),
-    .o_reg_die2_efuse_config       (o_reg_die2_efuse_config ),
-    .o_reg_die2_efuse_status       (o_reg_die2_efuse_status ),
 
     .i_test_st_reg_en              (i_test_st_reg_en        ),
     .i_cfg_st_reg_en               (i_cfg_st_reg_en         ),
@@ -212,6 +213,294 @@ com_reg_bank U_LV_COM_REG_BANK(
     .i_clk                         (i_clk                   ),
     .i_hrst_n                      (i_hrst_n                ),
     .o_rst_n                       (rst_n                   )
+);
+
+//DIE1_EFUSE_CONFIG REGISTER
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h00      ),
+    .REG_ADDR               (7'h04      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_DIE1_EFUSE_CONFIG(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .o_rdata              (rdata_die1_efuse_config                      ),
+    .o_reg_data           (reg_die1_efuse_config                        ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+    
+assign o_reg_die1_efuse_config = reg_die1_efuse_config;
+
+//DIE1_EFUSE_STATUS REGISTER
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h00      ),
+    .REG_ADDR               (7'h05      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_DIE1_EFUSE_STATUS(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .o_rdata              (rdata_die1_efuse_status                      ),
+    .o_reg_data           (reg_die1_efuse_status                        ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+    
+assign o_reg_die1_efuse_status = reg_die1_efuse_status;
+
+//DIE2_EFUSE_CONFIG REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h06      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       )
+)U_DIE2_EFUSE_CONFIG(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_reg_die2_efuse_config                      ),
+    .o_rdata              (rdata_die2_efuse_config                      ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//DIE2_EFUSE_STATUS REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h07      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       )
+)U_DIE2_EFUSE_STATUS(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_reg_die2_efuse_status                      ),
+    .o_rdata              (rdata_die2_efuse_status                      ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//STATUS3 REGISTER
+assign status3_in = {i_vrtmon, i_io_fsifo, i_io_pwma, i_io_pwm
+                      i_io_fsstate, i_io_fsenb, i_io_intb_lv, i_io_intb_hv};
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h0C      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_STATUS3(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (status3_in                                   ),
+    .o_rdata              (rdata_status3                                ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//STATUS4 REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h0D      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_STATUS4(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_fsm_state                                  ),
+    .o_rdata              (rdata_status4                                ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//ADC1_DATA_LOW REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h10      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_ADC1_DATA_LOW(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_adc1_data[7:0]                             ),
+    .o_rdata              (rdata_adc1_data_low                          ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//ADC1_DATA_HIG REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h11      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_ADC1_DATA_HIG(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            ({6'b0, i_adc1_data[9:8]}                     ),
+    .o_rdata              (rdata_adc1_data_hig                          ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//ADC2_DATA_LOW REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h12      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_ADC2_DATA_LOW(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_adc2_data[7:0]                             ),
+    .o_rdata              (rdata_adc2_data_low                          ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//ADC2_DATA_HIG REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h13      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_ADC2_DATA_HIG(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            ({6'b0, i_adc2_data[9:8]}                     ),
+    .o_rdata              (rdata_adc2_data_hig                          ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//BIST_RESULT1 REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h14      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_BIST_RESULT1(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_bist_rult[7:0]                             ),
+    .o_rdata              (rdata_bist_rult1                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//BIST_RESULT2 REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h15      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_BIST_RESULT2(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_bist_rult[15:8]                            ),
+    .o_rdata              (rdata_bist_rult2                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//ADC_REQ REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h1F      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       )
+)U_ADC_REQ(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (8'h00                                        ),
+    .o_rdata              (rdata_adc_status                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
 );
 
 //DIE1_ID REGISTER
@@ -474,7 +763,7 @@ assign o_reg_iso_reserved_reg = reg_iso_reserved_reg;
 
 //ISO_AMP_IBIAS REGISTER
 rw_reg #(
-    .DW                     (8          ),
+    .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h24      ),
@@ -502,12 +791,12 @@ rw_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_iso_amp_ibias_amp_ibias8u      = reg_iso_amp_ibias[5:3];
-assign o_iso_amp_ibias_amp_ibias8u_ptat = reg_iso_amp_ibias[2:0];
 
-//ISO_RX_DEMO REGISTER
+assign o_reg_iso_amp_ibias = reg_iso_amp_ibias;
+
+//ISO_DEMO_TRIM REGISTER
 rw_reg #(
-    .DW                     (8          ),
+    .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h05      ),
@@ -519,7 +808,7 @@ rw_reg #(
     .SUPPORT_SPI_EN_WR      (1'b0       ),
     .SUPPORT_SPI_EN_RD      (1'b0       ),
     .SUPPORT_EFUSE_WR       (1'b0       )
-)U_ISO_RX_DEMO(
+)U_ISO_DEMO_TRIM(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
     .i_test_st_reg_en     (i_test_st_reg_en                             ),
@@ -529,18 +818,18 @@ rw_reg #(
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
-    .o_rdata              (rdata_iso_rx_demo                            ),
-    .o_reg_data           (reg_iso_rx_demo                              ),
+    .o_rdata              (rdata_iso_demo_trim                          ),
+    .o_reg_data           (reg_iso_demo_trim                            ),
     .o_rcrc               (                                             ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_reg_iso_rx_demo_demo_pulse = reg_iso_rx_demo[4:3];
-assign o_reg_iso_rx_demo_demo_vth   = reg_iso_rx_demo[2:0];
+
+assign o_reg_iso_demo_trim = reg_iso_demo_trim;
 
 //ISO_TEST_SW REGISTER
 rw_reg #(
-    .DW                     (8          ),
+    .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
@@ -568,11 +857,12 @@ rw_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_iso_test_sw_reserved = reg_iso_test_sw;
+
+assign o_reg_iso_test_sw = reg_iso_test_sw;
 
 //ISO_OSC_JIT REGISTER
 rw_reg #(
-    .DW                     (8          ),
+    .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
@@ -600,11 +890,12 @@ rw_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_iso_osc_jit_iso_tx_jit_adj = reg_iso_osc_jit[3:0];
+
+assign o_reg_iso_osc_jit = reg_iso_osc_jit;
 
 //ANA_RESERVED_REG REGISTER
 rw_reg #(
-    .DW                     (8          ),
+    .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
@@ -632,14 +923,13 @@ rw_reg #(
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_ana_reserved_reg_reserved = reg_ana_reserved_reg;
 
-//T_DEAT_TIME REGISTER
+//CONFIG0_T_DEAT_TIME REGISTER
 rw_reg #(
     .DW                     (8          ),
     .AW                     (REG_AW     ),
     .CRC_W                  (REG_CRC_W  ),
-    .DEFAULT_VAL            (8'h50      ),
+    .DEFAULT_VAL            (8'h5F      ),
     .REG_ADDR               (7'h30      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
     .SUPPORT_TEST_MODE_RD   (1'b1       ),
@@ -648,7 +938,7 @@ rw_reg #(
     .SUPPORT_SPI_EN_WR      (1'b0       ),
     .SUPPORT_SPI_EN_RD      (1'b1       ),
     .SUPPORT_EFUSE_WR       (1'b0       )
-)U_T_DEAT_TIME(
+)U_CONFIG0_T_DEAT_TIME(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
     .i_test_st_reg_en     (i_test_st_reg_en                             ),
@@ -657,14 +947,14 @@ rw_reg #(
     .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
-    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
-    .o_rdata              (rdata_t_dead_time                            ),
-    .o_reg_data           (reg_t_dead_time                              ),
-    .o_rcrc               (                                             ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_config0_t_deat_time                    ),
+    .o_reg_data           (reg_config0_t_deat_time                      ),
+    .o_rcrc               (rcrc_config0_t_deat_time                     ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
-assign o_t_dead_time_tdt_tdt = reg_t_dead_time[7:4];
+assign o_reg_config0_t_deat_time = reg_config0_t_deat_time;
 
 assign spi_reg_ren   = i_spi_reg_ren    ;
 assign spi_reg_wen   = i_spi_reg_wen    ;
@@ -684,11 +974,16 @@ always_ff@(posedge i_clk or negedge rst_n) begin
     end
 end
 
-assign reg_spi_rdata = rdata_lvhv_device_id | rdata_mode | rdata_com_config1 | rdata_com_config2 | rdata_status1 | rdata_mask1 | rdata_status2 | rdata_mask2
-                       rdata_status3 | rdata_status4 | rdata_adc1_data_low | rdata_adc1_data_hig | rdata_adc2_data_low | rdata_adc2_data_hig |
-                       rdata_bist_rult1 | rdata_bist_rult2 | rdata_adc_status | rdata_die1_id | rdata_die2_id | rdata_die3_id | rdata_iso_bgr_trim | rdata_iso_con_ibias_trim |
-                       rdata_iso_osc48m_trim | rdata_iso_oscb_freq_adj | rdata_iso_reserved_reg | rdata_iso_amp_ibias | rdata_iso_demo_trim | rdata_iso_test_sw | rdata_iso_osc_jit |
+assign reg_spi_rdata = com_reg_rdata | rdata_die1_efuse_config | rdata_die1_efuse_status | rdata_die2_efuse_config |
+                       rdata_die2_efuse_status | rdata_status3 | rdata_status4 | rdata_adc1_data_low | rdata_adc1_data_hig | 
+                       rdata_adc2_data_low | rdata_adc2_data_hig |
+                       rdata_bist_rult1 | rdata_bist_rult2 | rdata_adc_status |
+                       rdata_die1_id | rdata_die2_id | rdata_die3_id | rdata_iso_bgr_trim | rdata_iso_con_ibias_trim |
+                       rdata_iso_osc48m_trim | rdata_iso_oscb_freq_adj | rdata_iso_reserved_reg | rdata_iso_amp_ibias | 
+                       rdata_iso_demo_trim | rdata_iso_test_sw | rdata_iso_osc_jit |
                        rdata_ana_reserved_reg | rdata_config0_t_deat_time;
+
+assign reg_spi_rcrc = com_reg_rcrc | rcrc_config0_t_deat_time;
 
 always_ff@(posedge i_clk or negedge rst_n) begin
     if(~rst_n) begin

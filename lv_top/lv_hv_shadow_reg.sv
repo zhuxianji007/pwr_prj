@@ -8,25 +8,28 @@
 //Rev.level     Date          Code_by         Contents
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
-module lv_hv_shadow_reg #(
+module lv_hv_shadow_reg import com_pkg::*; 
+#(
     include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
-    input  logic                            i_owt_rx_ack   ,
-    input  logic [OWT_CMD_BIT_NUM-1:    0]  i_owt_rx_cmd   ,
-    input  logic [OWT_ADCD_BIT_NUM-1:   0]  i_owt_rx_data  ,
-    input  logic                            i_owt_rx_status,//0: normal; 1: error. 
+    input  logic                            i_owt_rx_ack            ,
+    input  logic [OWT_CMD_BIT_NUM-1:    0]  i_owt_rx_cmd            ,
+    input  logic [OWT_ADCD_BIT_NUM-1:   0]  i_owt_rx_data           ,
+    input  logic                            i_owt_rx_status         ,//0: normal; 1: error. 
 
-    output logic [ADC_DW-1:             0]  o_reg_adc1    ,
-    output logic [ADC_DW-1:             0]  o_reg_adc2    ,
-    output logic [REG_DW-1:             0]  o_reg_status1 ,
-    output logic [REG_DW-1:             0]  o_reg_status2 ,
-    output logic [REG_DW-1:             0]  o_reg_status3 ,
-    output logic [REG_DW-1:             0]  o_reg_status4 ,
-    output logic [REG_DW-1:             0]  o_reg_bist1   ,
-    output logic [REG_DW-1:             0]  o_reg_bist2   ,
+    output str_reg_efuse_config             o_reg_die2_efuse_config ,
+    output str_reg_efuse_status             o_reg_die2_efuse_status ,
+    output logic [REG_DW-1:             0]  o_reg_status1           ,
+    output logic [REG_DW-1:             0]  o_reg_status2           ,
+    output logic [REG_DW-1:             0]  o_reg_status3           ,
+    output logic [REG_DW-1:             0]  o_reg_status4           ,
+    output logic [ADC_DW-1:             0]  o_reg_adc1              ,
+    output logic [ADC_DW-1:             0]  o_reg_adc2              ,
+    output logic [REG_DW-1:             0]  o_reg_bist1             ,
+    output logic [REG_DW-1:             0]  o_reg_bist2             ,
 
-    input  logic                            i_clk         ,
+    input  logic                            i_clk                   ,
     input  logic                            i_rst_n
  );
 //==================================
@@ -45,6 +48,66 @@ logic [ADC_DW-1: 0] reg_wdata;
 assign reg_wen   = i_owt_rx_ack & ~i_owt_rx_status & i_owt_rx_cmd[OWT_CMD_BIT_NUM-1]    ;
 assign reg_addr  = i_owt_rx_cmd[OWT_CMD_BIT_NUM-2: 0]                                   ;
 assign reg_wdata = i_owt_rx_data                                                        ;
+
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (10'h00     ),
+    .REG_ADDR               (7'h06      ),
+    .SUPPORT_TEST_MODE_WR   (1'b0       ),
+    .SUPPORT_TEST_MODE_RD   (1'b0       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b1       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_HV_EFUSE_CONFIG(
+    .i_ren                (1'b0                                         ),
+    .i_wen                (reg_wen                                      ),
+    .i_test_st_reg_en     (1'b0                                         ),
+    .i_cfg_st_reg_en      (1'b0                                         ),
+    .i_spi_ctrl_reg_en    (1'b1                                         ),
+    .i_efuse_ctrl_reg_en  (1'b0                                         ),
+    .i_addr               (reg_addr                                     ),
+    .i_wdata              (reg_wdata[REG_DW-1: 0]                       ),
+    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .o_rdata              (                                             ),
+    .o_reg_data           (o_reg_die2_efuse_config                      ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (i_rst_n                                      )
+);
+
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (10'h00     ),
+    .REG_ADDR               (7'h07      ),
+    .SUPPORT_TEST_MODE_WR   (1'b0       ),
+    .SUPPORT_TEST_MODE_RD   (1'b0       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b1       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_HV_EFUSE_STATUS(
+    .i_ren                (1'b0                                         ),
+    .i_wen                (reg_wen                                      ),
+    .i_test_st_reg_en     (1'b0                                         ),
+    .i_cfg_st_reg_en      (1'b0                                         ),
+    .i_spi_ctrl_reg_en    (1'b1                                         ),
+    .i_efuse_ctrl_reg_en  (1'b0                                         ),
+    .i_addr               (reg_addr                                     ),
+    .i_wdata              (reg_wdata[REG_DW-1: 0]                       ),
+    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
+    .o_rdata              (                                             ),
+    .o_reg_data           (o_reg_die2_efuse_status                      ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (i_rst_n                                      )
+);
 
 rw_reg #(
     .DW                     (REG_DW     ),
