@@ -23,7 +23,7 @@ module lv_owt_tx_ctrl #(
 
     output logic                            o_lv_hv_owt_tx      ,
 
-    output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_last_tx_cmd   ,
+    output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_tx_cmd_lock   ,
     
     input  logic                            i_clk	            ,
     input  logic                            i_rst_n
@@ -414,10 +414,10 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_owt_last_tx_cmd <= OWT_CMD_BIT_NUM'(0);
+        o_owt_tx_cmd_lock <= OWT_CMD_BIT_NUM'(0);
     end
     else if(tx_bit_done & (owt_tx_cur_st==OWT_END_TAIL_ST) & (owt_tx_nxt_st==OWT_IDLE_ST)) begin
-        o_owt_last_tx_cmd <= tx_cmd_bit;
+        o_owt_tx_cmd_lock <= tx_cmd_bit;
     end
     else;
 end

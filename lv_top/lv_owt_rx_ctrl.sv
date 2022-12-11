@@ -12,19 +12,23 @@ module lv_owt_rx_ctrl #(
     `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
-    input  logic                            i_hv_lv_owt_rx      ,
-    output logic                            o_owt_rx_ack        ,
-    output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_rx_cmd        ,
-    output logic [OWT_ADCD_BIT_NUM-1:   0]  o_owt_rx_data       ,
-    output logic                            o_owt_rx_status     ,//0: normal; 1: error. 
+    input  logic                            i_hv_lv_owt_rx              ,
+    output logic                            o_owt_rx_ack                ,
+    output logic [OWT_CMD_BIT_NUM-1:    0]  o_owt_rx_cmd                ,
+    output logic [OWT_ADCD_BIT_NUM-1:   0]  o_owt_rx_data               ,
+    output logic                            o_owt_rx_status             ,//0: normal; 1: error. 
 
-    input  logic                            i_reg_comerr_mode   ,
-    input  logic [3:                    0]  i_reg_comerr_config ,
-    output logic                            o_owt_com_err       ,
+    output logic                            o_owt_rx_wdg_rsp            ,
+    input  logic                            i_wdg_owt_rx_timeout_err    ,
+    input  logic [CTRL_FSM_ST_W-1:      0]  i_ctrl_unit_cur_fsm_st      ,                           
 
-    input  logic [OWT_CMD_BIT_NUM-1:    0]  i_owt_last_tx_cmd   ,        
+    input  logic                            i_reg_comerr_mode           ,
+    input  logic [3:                    0]  i_reg_comerr_config         ,
+    output logic                            o_owt_com_err               ,
+
+    input  logic [OWT_CMD_BIT_NUM-1:    0]  i_owt_tx_cmd_lock           ,        
     
-    input  logic                            i_clk	            ,
+    input  logic                            i_clk	                    ,
     input  logic                            i_rst_n
  );
 //==================================
@@ -68,6 +72,7 @@ logic [OWT_COM_CNT_W-1:         0]  owt_com_err_cnt     ;
 logic [1:                       0]  owt_com_err_add_sel ;
 logic [1:                       0]  owt_com_cor_sub_sel ;
 logic                               owt_com_err         ;
+logic                               test_st_tmo_gen_rack;
 //==================================
 //main code
 //==================================
@@ -347,32 +352,42 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-assign owt_rx_ack = (owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_nxt_st==OWT_IDLE_ST);
+assign test_st_tmo_gen_rack = (i_wdg_owt_rx_timeout_err & (i_ctrl_unit_cur_fsm_st==TEST_ST));
+assign owt_rx_ack           = (owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_nxt_st==OWT_IDLE_ST);
+                    
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_owt_rx_wdg_rsp <= 1'b0;
+    end
+    else begin
+        o_owt_rx_wdg_rsp <= owt_rx_ack & ~test_st_tmo_gen_rack;
+    end
+end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_owt_rx_ack <= 1'b0;
     end
     else begin
-        o_owt_rx_ack <= owt_rx_ack;
+        o_owt_rx_ack <= owt_rx_ack | test_st_tmo_gen_rack;
     end
 end
 
 assign owt_rx_status = (((owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_cur_st != OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
                         (((rx_sync_tail_bit != 4'b1100) & (owt_rx_cur_st == OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
-                        (crc8_chk_o_crc_lock != rx_crc_data) | (i_owt_last_tx_cmd != rx_cmd_data);
+                        (crc8_chk_o_crc_lock != rx_crc_data) | (i_owt_tx_cmd_lock != rx_cmd_data);
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_owt_rx_status <= 1'b0;
     end
     else begin
-        o_owt_rx_status <= owt_rx_status;
+        o_owt_rx_status <= owt_rx_status | test_st_tmo_gen_rack;
     end
 end
 
 assign o_owt_rx_cmd  = rx_cmd_data;
-assign o_owt_rx_data = rx_adc_data;
+assign o_owt_rx_data = rx_adc_data & {OWT_ADCD_BIT_NUM{~test_st_tmo_gen_rack}};
 
 
 assign owt_com_err_add_sel = i_reg_comerr_config[3: 2];
