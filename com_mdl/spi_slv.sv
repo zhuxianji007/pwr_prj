@@ -19,16 +19,16 @@ module spi_slv #(
 
     input  logic                    i_spi_slv_en        ,
 
-    output logic                    o_spi_reg_wr_req    ,
-    output logic                    o_spi_reg_rd_req    ,
-    output logic [REG_AW-1:     0]  o_spi_reg_addr      ,
-    output logic [REG_DW-1:     0]  o_spi_reg_wdata     ,
-    output logic [REG_CRC_W-1:  0]  o_spi_reg_wcrc      ,
+    output logic                    o_spi_rac_wr_req    ,//rac == reg_access_ctrl
+    output logic                    o_spi_rac_rd_req    ,
+    output logic [REG_AW-1:     0]  o_spi_rac_addr      ,
+    output logic [REG_DW-1:     0]  o_spi_rac_wdata     ,
+    output logic [REG_CRC_W-1:  0]  o_spi_rac_wcrc      ,
 
-    input  logic                    i_reg_spi_wack      ,
-    input  logic                    i_reg_spi_rack      ,
-    input  logic [REG_DW-1:     0]  i_reg_spi_data      ,
-    input  logic [REG_AW-1:     0]  i_reg_spi_addr      ,
+    input  logic                    i_rac_spi_wack      ,
+    input  logic                    i_rac_spi_rack      ,
+    input  logic [REG_DW-1:     0]  i_rac_spi_data      ,
+    input  logic [REG_AW-1:     0]  i_rac_spi_addr      ,
 
     output logic                    o_spi_err           ,
 
@@ -41,6 +41,7 @@ module spi_slv #(
 localparam SPI_RX_CMD_BIT_NUM    = 8                                                         ;
 localparam SPI_RX_DATA_BIT_NUM   = 8                                                         ;
 localparam SPI_RX_CRC_BIT_NUM    = 8                                                         ;
+localparam SPI_RX_CHK_BIT_NUM    = SPI_RX_CMD_BIT_NUM+SPI_RX_DATA_BIT_NUM                    ;
 localparam SPI_RX_BIT_NUM        = SPI_RX_CMD_BIT_NUM+SPI_RX_DATA_BIT_NUM+SPI_RX_CRC_BIT_NUM ;
 localparam MISO_RPTR_W           = $clog2(2*SPI_RX_BIT_NUM)                                  ;
 localparam SPI_MIN_ACC_CYC_NUM   = 19*CLK_M                                                  ;//one core clk cycle is (1000/48)ns, 19us has (19x1000)ns/(1000/48)ns = 19x48 cycle.
@@ -58,18 +59,18 @@ logic                            lanch_spi_access   ;
 logic [SPI_RX_CMD_BIT_NUM-1:  0] spi_rx_cmd         ;
 logic [SPI_RX_DATA_BIT_NUM-1: 0] spi_rx_data        ;
 logic [SPI_RX_CRC_BIT_NUM-1:  0] spi_rx_crc         ;
-logic [2*SPI_RX_BIT_NUM-1:    0] reg_rsp_data       ;
-logic [2*SPI_RX_BIT_NUM-1:    0] crc16to8_data_in   ;
+logic [SPI_RX_CHK_BIT_NUM-1:  0] rac_rsp_data       ;
+logic [SPI_RX_CHK_BIT_NUM-1:  0] crc16to8_data_in   ;
 logic [SPI_RX_CRC_BIT_NUM-1:  0] crc16to8_out       ;
 logic                            spi_crc_err        ;
 logic                            spi_access_flag    ;
 logic [SPI_MIN_ACC_CNT_W-1:   0] spi_acc_gap_cnt    ;
 logic                            lt_acc_gap_err     ;//lt == less than.
 logic                            spi_err            ;
-logic                            spi_reg_wen        ;
-logic                            spi_reg_ren        ;
-logic                            reg_spi_ack        ;
-logic [2:                     0] reg_spi_ack_ff     ;
+logic                            spi_rac_wen        ;
+logic                            spi_rac_ren        ;
+logic                            rac_spi_ack        ;
+logic [2:                     0] rac_spi_ack_ff     ;
 //==================================
 //main code
 //==================================
@@ -126,8 +127,8 @@ assign spi_rx_cmd  = spi_rx_bit[SPI_RX_BIT_NUM-1   -: SPI_RX_CMD_BIT_NUM ];
 assign spi_rx_data = spi_rx_bit[SPI_RX_CRC_BIT_NUM +: SPI_RX_DATA_BIT_NUM];
 assign spi_rx_crc  = spi_rx_bit[SPI_RX_CRC_BIT_NUM-1:                   0];
 
-assign reg_rsp_data      = {~i_reg_spi_rack|i_reg_spi_wack, i_reg_spi_addr, i_reg_spi_data};
-assign crc16to8_data_in  = reg_spi_ack ? reg_rsp_data : {spi_rx_cmd, spi_rx_data}          ;
+assign rac_rsp_data      = {~i_rac_spi_rack|i_rac_spi_wack, i_rac_spi_addr, i_rac_spi_data};
+assign crc16to8_data_in  = rac_spi_ack ? rac_rsp_data : {spi_rx_cmd, spi_rx_data}          ;
 
 crc16to8_parallel U_CRC16to8(
     .data_in(crc16to8_data_in    ),
@@ -137,14 +138,14 @@ crc16to8_parallel U_CRC16to8(
 //if spi sclk not match 24 cycle multiple or data be corrupted, it will cause crc err.
 assign spi_crc_err = (crc16to8_out != spi_rx_crc) & lanch_spi_access;
 
-assign reg_spi_ack = i_reg_spi_wack | i_reg_spi_rack;
+assign rac_spi_ack = i_rac_spi_wack | i_rac_spi_rack;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        reg_spi_ack_ff[2:0] <= 3'b0;
+        rac_spi_ack_ff[2:0] <= 3'b0;
     end
     else begin
-        reg_spi_ack_ff[2:0] <= {reg_spi_ack_ff[1:0], reg_spi_ack};
+        rac_spi_ack_ff[2:0] <= {rac_spi_ack_ff[1:0], rac_spi_ack};
     end
 end
 
@@ -152,7 +153,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         spi_access_flag <= 1'b0;
     end
-    else if(reg_spi_ack_ff[2]) begin //use reg_spi_ack_ff[2] for make sure spi_sclk steadily sample slv_rsp_bit.
+    else if(rac_spi_ack_ff[2]) begin //use rac_spi_ack_ff[2] for make sure spi_sclk steadily sample slv_rsp_bit.
         spi_access_flag <= 1'b0;
     end
     else if(lanch_spi_access) begin
@@ -165,7 +166,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         spi_acc_gap_cnt <= SPI_MIN_ACC_CNT_W'(0);
     end
-    else if(lanch_spi_access | reg_spi_ack_ff[2]) begin
+    else if(lanch_spi_access | rac_spi_ack_ff[2]) begin
         spi_acc_gap_cnt <= SPI_MIN_ACC_CNT_W'(0);    
     end
     else if(spi_access_flag) begin
@@ -189,38 +190,38 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-assign spi_reg_wen = lanch_spi_access &  spi_rx_cmd[SPI_RX_CMD_BIT_NUM-1] & ~spi_err;
-assign spi_reg_ren = lanch_spi_access & ~spi_rx_cmd[SPI_RX_CMD_BIT_NUM-1] & ~spi_err;
+assign spi_rac_wen = lanch_spi_access &  spi_rx_cmd[SPI_RX_CMD_BIT_NUM-1] & ~spi_err;
+assign spi_rac_ren = lanch_spi_access & ~spi_rx_cmd[SPI_RX_CMD_BIT_NUM-1] & ~spi_err;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_spi_reg_wr_req <= 1'b0;
-        o_spi_reg_rd_req <= 1'b0;
+        o_spi_rac_wr_req <= 1'b0;
+        o_spi_rac_rd_req <= 1'b0;
     end
     else begin
-        o_spi_reg_wr_req <= i_reg_spi_wack ? 1'b0 : (spi_reg_wen ? 1'b1 : o_spi_reg_wr_req);
-        o_spi_reg_rd_req <= i_reg_spi_rack ? 1'b0 : (spi_reg_ren ? 1'b1 : o_spi_reg_rd_req);
+        o_spi_rac_wr_req <= i_rac_spi_wack ? 1'b0 : (spi_rac_wen ? 1'b1 : o_spi_rac_wr_req);
+        o_spi_rac_rd_req <= i_rac_spi_rack ? 1'b0 : (spi_rac_ren ? 1'b1 : o_spi_rac_rd_req);
     end
 end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_spi_reg_addr <= REG_AW'(0);   
+        o_spi_rac_addr <= REG_AW'(0);   
     end
-    else if(spi_reg_wen | spi_reg_ren) begin
-        o_spi_reg_addr <= spi_rx_cmd[SPI_RX_CMD_BIT_NUM-2: 0];
+    else if(spi_racwen | spi_rac_ren) begin
+        o_spi_rac_addr <= spi_rx_cmd[SPI_RX_CMD_BIT_NUM-2: 0];
     end
     else;
 end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_spi_reg_wdata <=    REG_DW'(0);
-        o_spi_reg_wcrc  <= REG_CRC_W'(0);
+        o_spi_rac_wdata <=    REG_DW'(0);
+        o_spi_rac_wcrc  <= REG_CRC_W'(0);
     end
-    else if(spi_reg_wen) begin
-        o_spi_reg_wdata <= spi_rx_data ;
-        o_spi_reg_wcrc  <= spi_rx_crc  ;
+    else if(spi_rac_wen) begin
+        o_spi_rac_wdata <= spi_rx_data ;
+        o_spi_rac_wcrc  <= spi_rx_crc  ;
     end
     else;
 end
@@ -229,8 +230,8 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         slv_rsp_bit <= SPI_RX_BIT_NUM'(0);
     end
-    else if(reg_spi_ack) begin
-        slv_rsp_bit <= {reg_rsp_data, crc16to8_out};
+    else if(rac_spi_ack) begin
+        slv_rsp_bit <= {rac_rsp_data, crc16to8_out};
     end
     else;
 end
