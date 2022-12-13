@@ -208,7 +208,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_spi_rac_addr <= REG_AW'(0);   
     end
-    else if(spi_racwen | spi_rac_ren) begin
+    else if(spi_rac_wen | spi_rac_ren) begin
         o_spi_rac_addr <= spi_rx_cmd[SPI_RX_CMD_BIT_NUM-2: 0];
     end
     else;
@@ -244,4 +244,6 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
 
