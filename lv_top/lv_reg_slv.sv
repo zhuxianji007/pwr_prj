@@ -12,7 +12,7 @@
 //Rev.level     Date          Code_by         Contents
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
-module lv_reg_slv import com_pkg::*; 
+module lv_reg_slv import com_pkg::*; import lv_pkg::*;
 #(
     `include "lv_param.svh"
     parameter END_OF_LIST = 1
@@ -172,6 +172,7 @@ com_reg_bank U_LV_COM_REG_BANK(
     .i_spi_reg_wen                 (spi_reg_wen             ),
     .i_spi_reg_addr                (spi_reg_addr            ),
     .i_spi_reg_wdata               (spi_reg_wdata           ),
+    .i_spi_reg_wcrc                (spi_reg_wcrc            ),
 
     .o_reg_spi_wack                (com_reg_wack            ),
     .o_reg_spi_rack                (com_reg_rack            ),
@@ -197,7 +198,7 @@ com_reg_bank U_LV_COM_REG_BANK(
     .i_hrst_n                      (i_hrst_n                ),
     .o_rst_n                       (rst_n                   )
 );
-
+    
 //DIE1_EFUSE_CONFIG REGISTER
 rw_reg #(
     .DW                     (REG_DW     ),
@@ -700,15 +701,15 @@ rww_reg #(
     .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (i_spi_reg_wdata                              ),
-    .o_rdata              (rdata_iso_freq_adj                           ),
-    .o_reg_data           (reg_iso_freq_adj                             ),
+    .o_rdata              (rdata_iso_oscb_freq_adj                      ),
+    .o_reg_data           (reg_iso_oscb_freq_adj                        ),
     .i_lgc_wen            (i_efuse_reg_update                           ),
     .i_lgc_wdata          (i_efuse_reg_data[6]                          ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_reg_iso_freq_adj = reg_iso_freq_adj;
+assign o_reg_iso_oscb_freq_adj = reg_iso_oscb_freq_adj;
 
 //ISO_RESERVED_REG REGISTER
 rww_reg #(
@@ -982,6 +983,179 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
