@@ -39,9 +39,9 @@ module lv_hv_shadow_reg import com_pkg::*;
 //==================================
 //var delcaration
 //==================================
-logic               reg_wen  ;
-logic [REG_AW-1: 0] reg_addr ;
-logic [ADC_DW-1: 0] reg_wdata;              
+logic                  reg_wen  ;
+logic [REG_AW-1:    0] reg_addr ;
+logic [2*ADC_DW-1:  0] reg_wdata;              
 //==================================
 //main code
 //==================================
@@ -346,7 +346,7 @@ rw_reg #(
     .o_reg_data           (o_reg_adc2_data                              ),
     .o_rcrc               (                                             ),
     .i_clk                (i_clk                                        ),
-    .i_rst_n              (rst_n                                        )
+    .i_rst_n              (i_rst_n                                      )
 );
 // synopsys translate_off    
 //==================================
@@ -355,6 +355,9 @@ rw_reg #(
 //    
 // synopsys translate_on    
 endmodule
+
+
+
 
 
 
