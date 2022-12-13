@@ -17,10 +17,10 @@ module lv_ctrl_unit #(
     input  logic                            i_reg_efuse_vld     ,
     input  logic                            i_reg_efuse_done    ,//soft lanch, make test_st -> wait_st
     input  logic                            i_io_fsenb_n        ,
-    input  logic                            i_reg_owt_com_err   ,
-    input  logic                            i_reg_wdg_tmo_err   ,//tmo = timeout
     input  logic                            i_reg_spi_err       ,
     input  logic                            i_reg_scan_crc_err  ,
+    input  logic                            i_reg_owt_com_err   ,
+    input  logic                            i_reg_wdg_tmo_err   ,//tmo = timeout
     input  logic                            i_reg_lv_pwm_dterr  ,
     input  logic                            i_reg_lv_pwm_mmerr  ,
     input  logic                            i_reg_lv_vsup_uverr ,
@@ -48,6 +48,7 @@ module lv_ctrl_unit #(
     output logic                            o_bist_en           ,
     output logic                            o_fsm_ang_test_en   ,//ctrl analog mdl into test mode.
 
+    input  logic                            i_hv_intb_n         ,
     output logic                            o_intb_n            ,
 
     output logic                            o_efuse_load_req    ,
@@ -55,6 +56,8 @@ module lv_ctrl_unit #(
     
     output logic                            o_fsm_wdg_owt_tx_req,
     input  logic                            i_owt_rx_ack        ,
+
+    output logic [CTRL_FSM_ST_W-1:      0]  o_lv_ctrl_cur_st    ,
     
     input  logic                            i_clk               ,
     input  logic                            i_rst_n
@@ -62,15 +65,7 @@ module lv_ctrl_unit #(
 //==================================
 //local param delcaration
 //==================================
-localparam PWR_DWN_ST   = CTRL_FSM_ST_W'(0);
-localparam WAIT_ST      = CTRL_FSM_ST_W'(1);
-localparam TEST_ST      = CTRL_FSM_ST_W'(2);
-localparam NML_ST       = CTRL_FSM_ST_W'(3);
-localparam FAILSAFE_ST  = CTRL_FSM_ST_W'(4);
-localparam FAULT_ST     = CTRL_FSM_ST_W'(5);
-localparam CFG_ST       = CTRL_FSM_ST_W'(6);
-localparam RST_ST       = CTRL_FSM_ST_W'(7);
-localparam BIST_ST      = CTRL_FSM_ST_W'(8);
+
 //==================================
 //var delcaration
 //==================================
@@ -82,6 +77,7 @@ logic [CTRL_FSM_ST_W-1:         0]  lv_ctrl_nxt_st      ;
 logic                               effect_pwm_err      ;
 logic                               fault_st_pwm_en     ;
 logic                               cfg_st_intb_n_en    ;
+logic                               lv_intb_n           ;
 //==================================
 //main code
 //==================================
@@ -125,6 +121,8 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
     else;
 end
+
+assign o_lv_ctrl_cur_st = lv_ctrl_cur_st;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -361,16 +359,22 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
+always_comb begin
+    if((lv_ctrl_nxt_st==PWR_DWN_ST) || (lv_ctrl_nxt_st==WAIT_ST)  || (lv_ctrl_nxt_st==FAULT_ST) ||
+            cfg_st_intb_n_en || (lv_ctrl_nxt_st==RST_ST)) begin
+        lv_intb_n = 1'b0;
+    end
+    else begin
+        lv_intb_n = 1'b1;
+    end
+end
+
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_intb_n <= 1'b1;
     end
-    else if((lv_ctrl_nxt_st==PWR_DWN_ST) || (lv_ctrl_nxt_st==WAIT_ST)  || (lv_ctrl_nxt_st==FAULT_ST) ||
-            cfg_st_intb_n_en || (lv_ctrl_nxt_st==RST_ST)) begin
-        o_intb_n <= 1'b0;
-    end
     else begin
-        o_intb_n <= 1'b1;
+        o_intb_n <= lv_intb_n | i_hv_intb_n;
     end
 end
 // synopsys translate_off    
@@ -382,6 +386,24 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
