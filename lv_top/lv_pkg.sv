@@ -10,7 +10,7 @@
 //=============================================================
 
 `ifndef LV_PKG_SV
-`defien LV_PKG_SV
+`define LV_PKG_SV
 
 package lv_pkg;
 
@@ -20,3 +20,4 @@ package lv_pkg;
 endpackage
 
 `endif //LV_PKG_SV
+
