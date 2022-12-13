@@ -9,13 +9,15 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module lv_abist #(
-    `include "com_param.svh"
+	`include "com_param.svh"
     parameter END_OF_LIST          = 1
-)( 
+)(
+    input  logic 		   i_bist_en            , 
+
     input  logic 		   i_bist_lv_ov         ,
     input  logic           i_lv_vsup_ov         ,
 
-    output logic           o_bist_lv_ov_status  ,//1: bist success; 0: bist failure.
+    output logic           o_lbist_en           ,
     input  logic           i_clk                ,
     input  logic           i_rst_n
  );
@@ -27,7 +29,9 @@ parameter BIST_CNT_W           = $clog2(BIST_70US_CYC_NUM+1)  ;
 //==================================
 //var delcaration
 //==================================
-logic [BIST_CNT_W-1: 0]  bist_cnt ;
+logic [BIST_CNT_W-1: 0]  bist_cnt           ;
+logic                    lv_abist_status    ;
+logic                    lv_abist_status_ff ;
 //==================================
 //main code
 //==================================
@@ -45,14 +49,37 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-	    o_bist_lv_ov_status <= 1'b0;
+	    lv_abist_status <= 1'b0;
 	end
   	else if(i_lv_vsup_ov & (bist_cnt<BIST_70US_CYC_NUM)) begin
-	    o_bist_lv_ov_status <= 1'b1;
+	    lv_abist_status <= 1'b1;
 	end
     else;
 end
 
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+	    lv_abist_status_ff <= 1'b0;
+	end
+  	else begin
+	    lv_abist_status_ff <= lv_abist_status;
+	end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+	    o_lbist_en <= 1'b0;
+	end
+  	else if(i_bist_en) begin
+        if(lv_abist_status & ~lv_abist_status_ff) begin
+	        o_lbist_en <= 1'b1;
+        end
+        else;
+	end
+    else begin
+	    o_lbist_en <= 1'b0;    
+    end
+end
 // synopsys translate_off    
 //==================================
 //assertion
@@ -60,3 +87,4 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
