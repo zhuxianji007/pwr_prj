@@ -9,10 +9,10 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module lv_dgt_pwm_ctrl #(
-    include "lv_param.svh"
+    `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
-    input  logic 		   i_ang_dgt_pwm_wv     , //analog pwm ctrl to digtial pwm ctrl pwm wave
+    input  logic           i_ang_dgt_pwm_wv     , //analog pwm ctrl to digtial pwm ctrl pwm wave
     input  logic           i_ang_dgt_pwm_fs     ,
     input  logic           i_fsm_dgt_pwm_en     ,
     input  logic           i_fsm_dgt_fsc_en     ,
@@ -46,3 +46,4 @@ assign o_io_pwm_l2h = i_fsm_dgt_fsc_en ? i_ang_dgt_pwm_fs : i_ang_dgt_pwm_wv;
 //    
 // synopsys translate_on    
 endmodule
+
