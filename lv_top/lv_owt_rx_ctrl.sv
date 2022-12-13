@@ -34,11 +34,7 @@ module lv_owt_rx_ctrl #(
 //==================================
 //local param delcaration
 //==================================
-localparam    OWT_COM_ERR_SET_NUM[3: 0]  = {32, 16, 8, 4}                   ;
-localparam    OWT_COM_COR_SUB_NUM[3: 0]  = {8 , 4 , 2, 1}                   ;
-localparam    OWT_COM_MAX_ERR_NUM        = 512                              ;
-localparam    OWT_COM_ERR_CNT_W          = $clog2(OWT_COM_MAX_ERR_NUM+1)    ;
-localparam    INIT_OWT_COM_ERR_NUM       = OWT_COM_ERR_CNT_W'(32)           ;
+
 //==================================
 //var delcaration
 //==================================
@@ -65,7 +61,6 @@ logic                               crc8_chk_vld        ;
 logic                               crc8_chk_bit        ;
 logic                               crc8_chk_start      ;
 logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc      ;
-logic [OWT_CRC_BIT_NUM-1:       0]  crc8_chk_o_crc_lock ;
 logic                               owt_rx_status       ;
 logic                               owt_rx_ack          ;
 logic [OWT_COM_ERR_CNT_W-1:     0]  owt_com_err_cnt     ;
@@ -88,7 +83,7 @@ end
 always_comb begin
     case(owt_rx_cur_st)
         OWT_IDLE_ST : begin 
-            if(rx_mcst_vld_zero) begin
+            if(rx_vld & rx_vld_data) begin
                 owt_rx_nxt_st = OWT_SYNC_HEAD_ST;
             end
             else;
@@ -170,7 +165,7 @@ signal_detect #(
     .UP_TH(OWT_EXT_CYC_NUM      ),
     .MODE (1                    )
 ) U_OWT_RX_SIGNAL_DETECT(
-    .i_vld        (i_hv_lv_owt_rx),
+    .i_vld        (1'b1          ),
     .i_vld_data   (i_hv_lv_owt_rx),
     .o_vld        (rx_vld        ),
     .o_vld_data   (rx_vld_data   ),
@@ -193,7 +188,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         rx_gen_mcst_code <= 1'b0;
     end
-    else if((owt_rx_cur_st==OWT_IDLE_ST) | (owt_rx_cur_st==OWT_SYNC_HEAD_ST) | (owt_rx_cur_st==OWT_CMD_ST) |
+    else if((owt_rx_cur_st==OWT_SYNC_HEAD_ST) | (owt_rx_cur_st==OWT_CMD_ST) |
             (owt_rx_cur_st==OWT_ADC_DATA_ST) | (owt_rx_cur_st==OWT_NML_DATA_ST) | (owt_rx_cur_st==OWT_CRC_ST)) begin
         rx_gen_mcst_code <= rx_vld ? ~rx_gen_mcst_code : rx_gen_mcst_code;
     end
@@ -202,8 +197,8 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-assign rx_mcst_vld_one  = rx_vld & rx_vld_lock &  rx_vld_data & ~rx_vld_data_lock & rx_gen_mcst_code; //posedge 0->1
-assign rx_mcst_vld_zero = rx_vld & rx_vld_lock & ~rx_vld_data &  rx_vld_data_lock & rx_gen_mcst_code; //negedge 1->0
+assign rx_mcst_vld_one  = rx_vld & rx_vld_lock & ~rx_vld_data &  rx_vld_data_lock & rx_gen_mcst_code; //negedge 1->0
+assign rx_mcst_vld_zero = rx_vld & rx_vld_lock &  rx_vld_data & ~rx_vld_data_lock & rx_gen_mcst_code; //posedge 0->1
 assign rx_mcst_invld    = rx_vld & rx_vld_lock & ~(rx_vld_data ^ rx_vld_data_lock)& rx_gen_mcst_code;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -253,13 +248,6 @@ crc8_serial U_CRC8_CHK(
     .i_clk	           (i_clk               ),
     .i_rst_n           (i_rst_n             )
 );
-
-always_ff@(posedge i_clk) begin
-    if(rx_bit_done & ((owt_rx_cur_st==OWT_ADC_DATA_ST) | (owt_rx_cur_st==OWT_NML_DATA_ST))) begin
-        crc8_chk_o_crc_lock <= crc8_chk_o_crc;
-    end
-    else;
-end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -375,7 +363,7 @@ end
 
 assign owt_rx_status = (((owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_cur_st != OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
                         (((rx_sync_tail_bit != 4'b1100) & (owt_rx_cur_st == OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
-                        (crc8_chk_o_crc_lock != rx_crc_data) | (i_owt_tx_cmd_lock != rx_cmd_data);
+                        (crc8_chk_o_crc != rx_crc_data) | (i_owt_tx_cmd_lock != rx_cmd_data);
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -440,5 +428,8 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
 
 
