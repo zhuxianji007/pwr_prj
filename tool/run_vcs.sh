@@ -7,7 +7,7 @@ vcs -sverilog \
     -full64 \
     -debug_acc+all \
     -kdb \
-    -f test.f \
+    -f lv_top.f \
     -timescale=1ns/100ps \
     -l ./vcs_cmp.log \
     -o test_simv
