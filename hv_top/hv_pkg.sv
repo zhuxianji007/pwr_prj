@@ -10,7 +10,7 @@
 //=============================================================
 
 `ifndef HV_PKG_SV
-`defien HV_PKG_SV
+`define HV_PKG_SV
 
 package hv_pkg;
 
@@ -175,3 +175,4 @@ package hv_pkg;
 endpackage
 
 `endif //HV_PKG_SV
+
