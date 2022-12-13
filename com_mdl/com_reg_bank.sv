@@ -127,7 +127,7 @@ ro_reg #(
 rw_reg #(
     .DW                     (7          ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
+    .CRC_W                  (7          ),
     .DEFAULT_VAL            (7'h08      ),
     .REG_ADDR               (7'h01      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -157,7 +157,7 @@ rw_reg #(
 rw_reg #(
     .DW                     (1          ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
+    .CRC_W                  (1          ),
     .DEFAULT_VAL            (1'h0       ),
     .REG_ADDR               (7'h01      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -181,7 +181,7 @@ rw_reg #(
     .o_reg_data           (reg_mode[0:0]                                ),
     .o_rcrc               (rcrc_mode[0:0]                               ),
     .i_clk                (i_clk                                        ),
-    .i_rst_n              (hrst_n                                       )
+    .i_rst_n              (rst_n                                        )
 );
     
 assign o_reg_mode = reg_mode;
@@ -404,6 +404,96 @@ assign reg_spi_rcrc = rcrc_mode | rcrc_com_config1 | rcrc_com_config2 | rcrc_mas
 //    
 // synopsys translate_on    
 endmodule
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     
     
     
