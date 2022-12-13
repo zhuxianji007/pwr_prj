@@ -24,6 +24,9 @@ module efuse_rw_ctrl #(
     output logic                                        o_efuse_reg_update  ,//efuse update data to reg bank.
     output logic [EFUSE_DATA_NUM-1: 0][EFUSE_DW-1: 0]   o_efuse_reg_data    ,
 
+    input  logic                                        i_efuse_load_req    ,
+    output logic                                        o_efuse_load_done   , //hardware lanch, indicate efuse have load done.
+
     output logic                                        o_efuse_xxx         ,
     output logic                                        o_efuse_xxx         ,
 
@@ -51,5 +54,8 @@ module efuse_rw_ctrl #(
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
 
 
