@@ -54,7 +54,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
 	    cnt <= CNT_W'(0);
 	end
-  	else (i_vld | vld_lock)begin
+  	else if(i_vld | vld_lock) begin
         cnt <= (cnt==(EXTEND_CYC_NUM-1)) ? CNT_W'(0) : (cnt+1'b1);
     end
     else;
@@ -81,3 +81,4 @@ end
 `endif   
 // synopsys translate_on    
 endmodule
+
