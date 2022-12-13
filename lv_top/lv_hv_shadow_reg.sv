@@ -10,7 +10,7 @@
 //=============================================================
 module lv_hv_shadow_reg import com_pkg::*; 
 #(
-    include "lv_param.svh"
+    `include "lv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic                            i_owt_rx_ack            ,
@@ -24,8 +24,8 @@ module lv_hv_shadow_reg import com_pkg::*;
     output logic [REG_DW-1:             0]  o_reg_status2           ,
     output logic [REG_DW-1:             0]  o_reg_status3           ,
     output logic [REG_DW-1:             0]  o_reg_status4           ,
-    output logic [ADC_DW-1:             0]  o_reg_adc1              ,
-    output logic [ADC_DW-1:             0]  o_reg_adc2              ,
+    output logic [ADC_DW-1:             0]  o_reg_adc1_data         ,
+    output logic [ADC_DW-1:             0]  o_reg_adc2_data         ,
     output logic [REG_DW-1:             0]  o_reg_bist1             ,
     output logic [REG_DW-1:             0]  o_reg_bist2             ,
 
@@ -313,7 +313,7 @@ rw_reg #(
     .i_wdata              (reg_wdata[ADC_DW-1: 0]                       ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
     .o_rdata              (                                             ),
-    .o_reg_data           (o_reg_adc1                                   ),
+    .o_reg_data           (o_reg_adc1_data                              ),
     .o_rcrc               (                                             ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (i_rst_n                                      )
@@ -343,7 +343,7 @@ rw_reg #(
     .i_wdata              (reg_wdata[OWT_ADCD_BIT_NUM-1 -: ADC_DW]      ),
     .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
     .o_rdata              (                                             ),
-    .o_reg_data           (o_reg_adc2                                   ),
+    .o_reg_data           (o_reg_adc2_data                              ),
     .o_rcrc               (                                             ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
@@ -355,4 +355,6 @@ rw_reg #(
 //    
 // synopsys translate_on    
 endmodule
+
+
 
