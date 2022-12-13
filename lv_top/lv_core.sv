@@ -1,6 +1,6 @@
 //============================================================
 //Module   : lv_core
-//Function : rd hv reg and store them in lv
+//Function : 
 //File Tree: 
 //-------------------------------------------------------------
 //Update History
@@ -8,7 +8,7 @@
 //Rev.level     Date          Code_by         Contents
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
-module lv_core import com_pkg::*;
+module lv_core import com_pkg::*; import lv_pkg::*;
 #(
     `include "lv_param.svh"
     parameter END_OF_LIST = 1
@@ -33,14 +33,21 @@ module lv_core import com_pkg::*;
     input  logic                                        i_lv_pwm_cmp_wave               ,
     input  logic                                        i_lv_pwm_gate_wave              ,
 
-    input logic                                         i_vrtmon                        ,
-    input logic                                         i_io_fsifo                      ,
-    input logic                                         i_io_pwma                       ,
-    input logic                                         i_io_pwm                        ,
-    input logic                                         i_io_fsstate                    ,
-    input logic                                         i_io_fsenb                      ,
-    input logic                                         i_io_intb_lv                    ,
-    input logic                                         i_io_intb_hv                    ,
+    input  logic                                        i_vrtmon                        ,
+    input  logic                                        i_io_fsifo                      ,
+    input  logic                                        i_io_pwma                       ,
+    input  logic                                        i_io_pwm                        ,
+    input  logic                                        i_io_fsstate                    ,
+    input  logic                                        i_io_fsenb                      ,
+    input  logic                                        i_io_intb_lv                    ,
+    input  logic                                        i_io_intb_hv                    ,
+
+    input  logic                                        i_ang_dgt_pwm_wv                , //analog pwm ctrl to digtial pwm ctrl pwm wave
+    input  logic                                        i_ang_dgt_pwm_fs                ,
+
+    output logic                                        o_dgt_ang_pwm_en                ,
+    output logic                                        o_dgt_ang_fsc_en                ,
+    output logic                                        o_io_pwm_l2h                    ,
   
     output str_reg_iso_bgr_trim                         o_reg_iso_bgr_trim              ,
     output str_reg_iso_con_ibias_trim                   o_reg_iso_con_ibias_trim        ,
@@ -199,10 +206,10 @@ spi_slv U_SPI_SLV(
     .o_spi_rac_wdata            (spi_rac_wdata                      ),
     .o_spi_rac_wcrc             (spi_rac_wcrc                       ),
 
-    .i_reg_spi_wack             (rac_spi_wack                       ),
-    .i_reg_spi_rack             (rac_spi_rack                       ),
-    .i_reg_spi_data             (rac_spi_data                       ),
-    .i_reg_spi_addr             (rac_spi_addr                       ),
+    .i_rac_spi_wack             (rac_spi_wack                       ),
+    .i_rac_spi_rack             (rac_spi_rack                       ),
+    .i_rac_spi_data             (rac_spi_data                       ),
+    .i_rac_spi_addr             (rac_spi_addr                       ),
 
     .o_spi_err                  (spi_reg_slv_err                    ),
 
@@ -482,7 +489,7 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
 );
 
 lv_pwm_intb_decode U_LV_PWM_INTB_DECODE(
-    .i_hv_pwm_int               (i_hv_pwm_int                       ),
+    .i_hv_pwm_intb_n            (i_hv_pwm_intb_n                    ),
     .o_lv_pwm_gwave             (                                   ),
     .o_hv_intb_n                (hv_intb_n                          ),
     .i_clk	                    (i_clk                              ),
@@ -510,6 +517,18 @@ lv_lbist U_LV_LBIST(
     .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
+
+lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
+    .i_ang_dgt_pwm_wv           (i_ang_dgt_pwm_wv                   ), //analog pwm ctrl to digtial pwm ctrl pwm wave
+    .i_ang_dgt_pwm_fs           (i_ang_dgt_pwm_fs                   ),
+    .i_fsm_dgt_pwm_en           (fsm_dgt_pwm_en                     ),
+    .i_fsm_dgt_fsc_en           (fsm_dgt_fsc_en                     ),
+    .o_dgt_ang_pwm_en           (o_dgt_ang_pwm_en                   ),
+    .o_dgt_ang_fsc_en           (o_dgt_ang_fsc_en                   ),
+    .o_io_pwm_l2h               (o_io_pwm_l2h                       ),
+    .i_clk                      (i_clk                              ),
+    .i_rst_n                    (i_rst_n                            )
+);
 // synopsys translate_off    
 //==================================
 //assertion
@@ -517,3 +536,4 @@ lv_lbist U_LV_LBIST(
 //    
 // synopsys translate_on    
 endmodule
+
