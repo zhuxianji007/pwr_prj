@@ -59,11 +59,11 @@ assign ren = i_ren & hit & ((i_test_st_reg_en & SUPPORT_TEST_MODE_RD) | (i_cfg_s
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_reg_data <= DEFAULT_VAL;
-	    crc_data <= {CRC_W{1'b0}};
+	    crc_data   <= {CRC_W{1'b0}};
     end
     else begin
-        o_reg_data <= wen ? i_wdata : o_reg_odata;
-	    crc_data <= wen ? i_crc_data : crc_data;
+        o_reg_data <= wen ? i_wdata : o_reg_data;
+	    crc_data   <= wen ? i_crc_data : crc_data;
     end
 end
 	
@@ -83,3 +83,4 @@ endproperty
 `endif
 // synopsys translate_on    
 endmodule
+
