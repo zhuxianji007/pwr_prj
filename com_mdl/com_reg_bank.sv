@@ -31,22 +31,8 @@ module com_reg_bank import com_pkg::*;
     output logic [REG_CRC_W-1:      0]                  o_reg_spi_rcrc                  ,
         
     //inner flop-flip data
-    input  logic                                        i_int_bist_fail                 ,
-    input  logic                                        i_int_pwm_mmerr                 ,
-    input  logic                                        i_int_pwm_dterr                 ,
-    input  logic                                        i_int_wdg_err                   ,
-    input  logic                                        i_int_com_err                   ,
-    input  logic                                        i_int_crc_err                   ,
-    input  logic                                        i_int_spi_err                   ,
-    
-    input logic                                         i_int_hv_scp_flt                ,
-    input logic                                         i_int_hv_desat_flt              ,
-    input logic                                         i_int_hv_oc                     ,
-    input logic                                         i_int_hv_ot                     ,
-    input logic                                         i_int_hv_vcc_ov                 ,
-    input logic                                         i_int_hv_vcc_uv                 ,
-    input logic                                         i_int_lv_vsup_ov                ,
-    input logic                                         i_int_lv_vsup_uv                ,
+    input  logic [REG_DW-1:         0]                  i_int_status1                   ,
+    input  logic [REG_DW-1:         0]                  i_int_status2                   ,
     
     //output to inner logic
     output str_reg_mode                                 o_reg_mode                      ,
@@ -78,10 +64,7 @@ logic [REG_DW-1:    0] spi_reg_wdata            ;
 logic [REG_CRC_W-1: 0] spi_reg_wcrc             ;
 logic [REG_DW-1:    0] reg_spi_rdata            ;
 logic [REG_CRC_W-1: 0] reg_spi_rcrc             ;
-    
-logic [REG_DW-1:    0] status1_lgc_wen          ;
-logic [REG_DW-1:    0] status2_lgc_wen          ;
-    
+        
 logic [REG_DW-1:    0] rdata_lvhv_device_id     ;
 logic [REG_DW-1:    0] rdata_mode               ;
 logic [REG_CRC_W-1: 0] rcrc_mode                ;
@@ -270,8 +253,6 @@ rw_reg #(
 assign o_reg_com_config2 = reg_com_config2;
 
 //STATUS1 REGISTER
-assign status1_lgc_wen = {i_int_bist_fail, 1'b0, i_int_pwm_mmerr, i_int_pwm_dterr, 
-                           i_int_wdg_err, i_int_com_err, i_int_crc_err, i_int_spi_err};
 rwc_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -295,7 +276,7 @@ rwc_reg #(
     .i_wdata              (spi_reg_wdata                                ),
     .o_rdata              (rdata_status1                                ),
     .o_reg_data           (reg_status1                                  ),
-    .i_lgc_wen            (status1_lgc_wen                              ),
+    .i_lgc_wen            (i_int_status1                                ),
     .i_lgc_wdata          (8'hFF                                        ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
@@ -337,9 +318,6 @@ rw_reg #(
 assign o_reg_mask1 = reg_mask1;
 
 //STATUS2 REGISTER
-assign status2_lgc_wen = {i_int_hv_scp_flt, i_int_hv_desat_flt, i_int_hv_oc,      i_int_hv_ot,
-                          i_int_hv_vcc_ov,  i_int_hv_vcc_uv,    i_int_lv_vsup_ov, i_int_lv_vsup_uv};
-
 rwc_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
@@ -363,7 +341,7 @@ rwc_reg #(
     .i_wdata              (spi_reg_wdata                                ),
     .o_rdata              (rdata_status2                                ),
     .o_reg_data           (reg_status2                                  ),
-    .i_lgc_wen            (status2_lgc_wen                              ),
+    .i_lgc_wen            (i_int_status2                                ),
     .i_lgc_wdata          (8'hFF                                        ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
@@ -426,6 +404,51 @@ assign reg_spi_rcrc = rcrc_mode | rcrc_com_config1 | rcrc_com_config2 | rcrc_mas
 //    
 // synopsys translate_on    
 endmodule
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     
     
     
