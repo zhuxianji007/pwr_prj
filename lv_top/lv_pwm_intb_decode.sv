@@ -74,7 +74,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 end
 
 always_comb begin
-    case(hv_pwm_intb_cur_st)
+    case(lv_pwm_intb_cur_st)
         PWM_INTB_FSM_IDLE_ST : begin
             if(bit_detect_out_vld) begin
                 lv_pwm_intb_nxt_st = PWM_INTB_FSM_DETECT_0_ST;
@@ -110,7 +110,6 @@ always_comb begin
         end
         PWM_INTB_FSM_DETECT_3_ST : begin
             lv_pwm_intb_nxt_st = PWM_INTB_FSM_IDLE_ST;            
-            else;
         end       
         default : begin
             lv_pwm_intb_nxt_st = PWM_INTB_FSM_IDLE_ST;
@@ -118,8 +117,8 @@ always_comb begin
     endcase
 end
 
-assign hv_intb0_pulse  = (hv_pwm_intb_cur_st==PWM_INTB_FSM_DETECT_0_ST) &  (hv_pwm_intb_nxt_st==PWM_INTB_FSM_IDLE_ST) ;
-assign hv_intb1_pulse  = (hv_pwm_intb_cur_st==PWM_INTB_FSM_DETECT_3_ST) &  (hv_pwm_intb_nxt_st==PWM_INTB_FSM_IDLE_ST) ;
+assign hv_intb0_pulse  = (lv_pwm_intb_cur_st==PWM_INTB_FSM_DETECT_0_ST) & (lv_pwm_intb_nxt_st==PWM_INTB_FSM_IDLE_ST) ;
+assign hv_intb1_pulse  = (lv_pwm_intb_cur_st==PWM_INTB_FSM_DETECT_3_ST) & (lv_pwm_intb_nxt_st==PWM_INTB_FSM_IDLE_ST) ;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -155,3 +154,4 @@ signal_detect #(
 //    
 // synopsys translate_on    
 endmodule
+
