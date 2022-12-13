@@ -5,6 +5,6 @@ verdi +v2k \
       -ssv \
       -ssy \
       -ssz \
-      -f test.f \
+      -f lv_top.f \
       -l verdi_cmp.log \
       -top $1
