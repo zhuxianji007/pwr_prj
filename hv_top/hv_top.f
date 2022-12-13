@@ -4,7 +4,7 @@
 -f $PRJ_ROOT/cbb/cbb.f
 -f $PRJ_ROOT/com_mdl/com_mdl.f
 
-//lv
+//hv
 $PRJ_ROOT/hv_top/hv_pkg.sv
 $PRJ_ROOT/hv_top/hv_abist.sv
 $PRJ_ROOT/hv_top/hv_ctrl_unit.sv
