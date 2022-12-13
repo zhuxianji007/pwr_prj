@@ -33,8 +33,8 @@ module lv_reg_access_ctrl #(
     output logic                    o_spi_owt_rd_req        ,
     output logic [REG_AW-1:     0]  o_spi_owt_addr          ,
     output logic [REG_DW-1:     0]  o_spi_owt_data          ,
-    input  logic                    i_owt_spi_wack          ,
-    input  logic                    i_owt_spi_rack          ,
+    input  logic                    i_owt_tx_spi_ack        ,
+    input  logic                    i_owt_rx_spi_rsp        ,
     output logic                    o_spi_rst_wdg           ,
 
     output logic                    o_rac_reg_ren           ,
@@ -74,7 +74,7 @@ logic                                       owt_rd_ack              ;
 logic                                       spi_rac_wr_req_ff       ;
 logic                                       spi_rac_rd_req_ff       ;
 logic [REG_DW-1:            0]              rac_spi_data            ;
-logic                                       owt_spi_rack_ff         ;                 
+logic                                       owt_rx_spi_rsp_ff       ;                 
 //==================================
 //main code
 //==================================
@@ -134,7 +134,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_spi_owt_wr_req <= 1'b0;
     end
-    else if(i_owt_spi_wack) begin
+    else if(i_owt_tx_spi_ack) begin
         o_spi_owt_wr_req <= 1'b0;
     end
     else begin
@@ -145,10 +145,10 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        owt_spi_rack_ff <= 1'b0;
+        owt_rx_spi_rsp_ff <= 1'b0;
     end
     else begin
-        owt_spi_rack_ff <= i_owt_spi_rack;
+        owt_rx_spi_rsp_ff <= i_owt_rx_spi_rsp;
     end
 end
 
@@ -156,7 +156,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_spi_owt_rd_req <= 1'b0;
     end
-    else if(owt_spi_rack_ff) begin
+    else if(i_owt_tx_spi_ack) begin
         o_spi_owt_rd_req <= 1'b0;
     end
     else begin
@@ -250,8 +250,8 @@ end
                        
 assign rac_spi_data    = i_spi_rac_wr_req ? o_rac_reg_wdata : i_reg_rac_rdata;
 
-assign o_rac_spi_wack = i_owt_spi_wack  | (~trig_owt_wr_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_rac_wack)                        ; 
-assign o_rac_spi_rack = owt_spi_rack_ff | (~trig_owt_rd_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_rac_rack & ~wdg_scan_grant_ff[2]);
+assign o_rac_spi_wack = i_owt_tx_spi_ack  | (~trig_owt_wr_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_rac_wack)                        ; 
+assign o_rac_spi_rack = owt_rx_spi_rsp_ff | (~trig_owt_rd_dgt_reg & ~trig_owt_acc_ang_reg & i_reg_rac_rack & ~wdg_scan_grant_ff[2]);
 assign o_rac_spi_data = rac_spi_data                                                                                             ;
 assign o_rac_spi_addr = o_rac_reg_addr                                                                                           ;
 // synopsys translate_off    
@@ -261,4 +261,5 @@ assign o_rac_spi_addr = o_rac_reg_addr                                          
 //    
 // synopsys translate_on    
 endmodule
+
 
