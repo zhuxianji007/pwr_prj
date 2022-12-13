@@ -42,4 +42,13 @@ parameter PWM_INTB_EXT_CYC_NUM  = 8,
 parameter HV_DV_ID              = 4'(0),
 parameter LV_DV_ID              = 4'(0),
 
+parameter OWT_COM_ERR_SET_NUM[3: 0]  = {32, 16, 8, 4}                   ,
+parameter OWT_COM_COR_SUB_NUM[3: 0]  = {8 , 4 , 2, 1}                   ,
+parameter OWT_COM_MAX_ERR_NUM        = 512                              ,
+parameter OWT_COM_ERR_CNT_W          = $clog2(OWT_COM_MAX_ERR_NUM+1)    ,
+parameter INIT_OWT_COM_ERR_NUM       = OWT_COM_ERR_CNT_W'(32)           ,
+
+
+
+
 
