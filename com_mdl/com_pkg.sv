@@ -10,7 +10,7 @@
 //=============================================================
 
 `ifndef COM_PKG_SV
-`defien COM_PKG_SV
+`define COM_PKG_SV
 
 package com_pkg;
 
@@ -132,7 +132,7 @@ package com_pkg;
     } str_reg_iso_oscb_freq_adj;
 
     typedef struct packed{
-        logic                   d1_efuse_vld                ;
+        logic                   efuse_vld                   ;
         logic [6:       0]      rsv                         ;
     } str_reg_iso_reserved_reg;
 
@@ -165,4 +165,6 @@ package com_pkg;
 endpackage
 
 `endif //COM_PKG_SV
+
+
 
