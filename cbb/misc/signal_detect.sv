@@ -61,7 +61,7 @@ generate
             end
         end
     end
-    else begin: : OWT_MODE
+    else begin: OWT_MODE
         assign detect_end = i_vld & last_vld & (i_vld_data==last_vld_data) & (cnt>=DN_TH) & (cnt<UP_TH);
 
         always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -96,7 +96,7 @@ end
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
 	    o_vld        <= 1'b0;
-        o_Vld_data   <= 1'b0;
+        o_vld_data   <= 1'b0;
 	end
   	else begin
         o_vld        <= detect_end;
@@ -116,4 +116,6 @@ endproperty
 `endif   
 // synopsys translate_on    
 endmodule
+
+
 
