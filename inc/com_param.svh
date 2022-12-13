@@ -15,8 +15,8 @@ parameter OWT_SYNC_BIT_NUM      = 12                                            
 parameter OWT_TAIL_BIT_NUM      = 4                                                         ,
 parameter OWT_ABORT_BIT_NUM     = 4                                                         ,
 parameter OWT_FSM_ST_W          = $clog2(OWT_FSM_ST_NUM)                                    ,
-parameter CNT_OWT_EXT_CYC_W     = $clog2(EXT_CYC_NUM+1)                                     ,
-parameter CNT_OWT_MAX_W         = $clog2(ADC_DBIT_NUM)                                      ,
+parameter CNT_OWT_EXT_CYC_W     = $clog2(OWT_EXT_CYC_NUM+1)                                 ,
+parameter CNT_OWT_MAX_W         = $clog2(OWT_ADCD_BIT_NUM)                                  ,
 parameter OWT_IDLE_ST           = OWT_FSM_ST_W'(0)                                          ,
 parameter OWT_SYNC_HEAD_ST      = OWT_FSM_ST_W'(1)                                          ,
 parameter OWT_SYNC_TAIL_ST      = OWT_FSM_ST_W'(2)                                          , 
@@ -32,13 +32,14 @@ parameter  WDG_250US_CYC_NUM    =  250*CLK_M                                    
 parameter  WDG_500US_CYC_NUM    =  500*CLK_M                                                ,
 parameter WDG_1000US_CYC_NUM    = 1000*CLK_M                                                ,
 parameter WDG_2000US_CYC_NUM    = 2000*CLK_M                                                ,
-parameter [3: 0] WDG_SCANREG_TH = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM}, //TH = threshold
-parameter [3: 0] WDG_REFRESH_TH = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
-parameter [3: 0] WDG_TIMEOUT_TH = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
-parameter [3: 0] WDG_INTB_TH    = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
-parameter WDG_CNT_W             = $clog2(WDG_2000US_CYC_NUM) ;
+parameter WDG_SCANREG_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM}, //TH = threshold
+parameter WDG_REFRESH_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter WDG_TIMEOUT_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter WDG_INTB_TH[3: 0]     = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter WDG_CNT_W             = $clog2(WDG_2000US_CYC_NUM) ,
 
 parameter PWM_INTB_EXT_CYC_NUM  = 8,
 parameter HV_DV_ID              = 4'(0),
 parameter LV_DV_ID              = 4'(0),
+
 
