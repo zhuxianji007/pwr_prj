@@ -27,8 +27,8 @@ module efuse_rw_ctrl #(
     input  logic                                        i_efuse_load_req    ,
     output logic                                        o_efuse_load_done   , //hardware lanch, indicate efuse have load done.
 
-    output logic                                        o_efuse_xxx         ,
-    output logic                                        o_efuse_xxx         ,
+    output logic                                        o_efuse_xx0         ,
+    output logic                                        o_efuse_xx1         ,
 
     input  logic                                        i_clk               ,
     input  logic                                        i_rst_n
