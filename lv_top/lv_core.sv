@@ -351,7 +351,7 @@ lv_hv_shadow_reg U_LV_HV_SHADOW_REG(
     .i_rst_n                    (i_rst_n                            )
 );
 
-lv_pwm_int_proc U_LV_PWM_INT_PROC(
+lv_analog_int_proc U_LV_ANALOG_INT_PROC(
     .i_lv_pwm_dt                (i_lv_pwm_dt                        ),
     .i_lv_pwm_cmp_wave          (i_lv_pwm_cmp_wave                  ),
     .i_lv_pwm_gate_wave         (i_lv_pwm_gate_wave                 ),
@@ -536,4 +536,6 @@ lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
 //    
 // synopsys translate_on    
 endmodule
+
+
 
