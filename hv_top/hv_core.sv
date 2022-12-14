@@ -25,13 +25,12 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     input  logic                                        i_io_test_mode                  ,
     input  logic                                        i_io_fsenb_n                    ,
     output logic                                        o_fsm_ang_test_en               ,
-    input  logic                                        i_hv_pwm_intb_n                 ,
-    input  logic 		                                i_bist_lv_ov                    ,
-    input  logic                                        i_lv_vsup_ov                    ,
-    input  logic                                        i_lv_vsup_uv_n                  ,
-    input  logic                                        i_lv_pwm_dt                     ,
-    input  logic                                        i_lv_pwm_cmp_wave               ,
-    input  logic                                        i_lv_pwm_gate_wave              ,
+    input  logic                                        i_hv_vcc_uv                     ,
+    input  logic                                        i_hv_vcc_ov                     ,
+    input  logic                                        i_hv_ot                         ,
+    input  logic                                        i_hv_oc                         ,
+    input  logic                                        i_hv_desat_flt                  ,
+    input  logic                                        i_hv_scp_flt                    ,
 
     input  logic                                        i_vrtmon                        ,
     input  logic                                        i_io_fsifo                      ,
@@ -168,25 +167,18 @@ logic                                               bist_wdg_owt_tx_req     ;
 logic                                               wdg_owt_reg_slv_tmoerr  ;//timeout_err
 str_reg_com_config2                                 reg_com_config2         ;
     
-logic                                               lv_pwm_mmerr            ;
-logic                                               lv_pwm_dterr            ;
+logic                                               hv_vcc_uverr            ;
+logic                                               hv_vcc_overr            ;
+logic                                               hv_ot_err               ;
+logic                                               hv_oc_err               ;
+logic                                               hv_desat_err            ;
+logic                                               hv_scp_err              ;
     
 logic [REG_DW-1:             0]                     lv_status1              ;
 logic [REG_DW-1:             0]                     lv_status2              ;
 logic [REG_DW-1:             0]                     lv_status3              ;
 logic [REG_DW-1:             0]                     lv_status4              ;
-    
-str_reg_efuse_config                                reg_die2_efuse_config   ;
-str_reg_efuse_status                                reg_die2_efuse_status   ;
-logic [REG_DW-1:             0]                     reg_hv_status1          ;
-logic [REG_DW-1:             0]                     reg_hv_status2          ;
-logic [REG_DW-1:             0]                     reg_hv_status3          ;
-logic [REG_DW-1:             0]                     reg_hv_status4          ;
-logic [ADC_DW-1:             0]                     reg_hv_adc1_data        ;
-logic [ADC_DW-1:             0]                     reg_hv_adc2_data        ;
-logic [REG_DW-1:             0]                     reg_hv_bist1            ;
-logic [REG_DW-1:             0]                     reg_hv_bist2            ;
-    
+        
 logic                                               efuse_reg_update        ;
 logic [EFUSE_DATA_NUM-1:     0][EFUSE_DW-1: 0]      efuse_reg_data          ;
     
@@ -314,91 +306,61 @@ lv_reg_access_ctrl U_LV_REG_ACCESS_CTRL(
     .i_rst_n                    (i_rst_n                            )
 );
     
-    lv_owt_tx_ctrl U_LV_OWT_TX_CTRL(
-        .i_spi_owt_wr_req           (spi_owt_wr_req                     ),
-        .i_spi_owt_rd_req           (spi_owt_rd_req                     ),
-        .i_spi_owt_addr             (spi_owt_addr                       ),
-        .i_spi_owt_data             (spi_owt_data                       ),
-        .o_owt_tx_spi_ack           (owt_tx_spi_ack                     ),
-        
-        .i_wdg_owt_adc_req          (wdg_owt_adc_req                    ),
-        .o_owt_wdg_adc_ack          (owt_wdg_adc_ack                    ),
+lv_owt_tx_ctrl U_LV_OWT_TX_CTRL(
+    .i_rac_owt_tx_wr_cmd_vld    (rac_owt_tx_wr_cmd_vld              ),
+    .i_rac_owt_tx_rd_cmd_vld    (rac_owt_tx_rd_cmd_vld              ),
+    .i_rac_owt_tx_addr          (rac_owt_tx_addr                    ),
+    .i_rac_owt_tx_data          (rac_owt_tx_data                    ),
+    .o_lv_hv_owt_tx             (o_hv_lv_owt_tx                     ),
+    .i_clk	                    (i_clk                              ),
+    .i_rst_n                    (i_rst_n                            )
+);
+   
+lv_wdg_ctrl U_LV_WDG_CTRL(
+    .i_wdg_scan_en              (wdg_scan_en                        ),
+    .o_wdg_scan_rac_rd_req      (wdg_scan_rac_rd_req                ), //wdg_scan to rac, rac = reg_access_ctrl
+    .o_wdg_scan_rac_addr        (wdg_scan_rac_addr                  ),
+    .i_rac_wdg_scan_ack         (rac_wdg_scan_ack                   ),
+    .i_rac_wdg_scan_data        (rac_wdg_scan_data                  ),
+    .i_rac_wdg_scan_crc         (rac_wdg_scan_crc                   ),
+    .o_wdg_scan_crc_err         (wdg_scan_reg_slv_crcerr            ),
+
+    .i_bist_scan_reg_req        (bist_scan_reg_req                  ),
+    .o_scan_reg_bist_ack        (scan_reg_bist_ack                  ),
+    .o_scan_reg_bist_err        (scan_reg_bist_err                  ),
+
+    .i_wdg_owt_en               (wdg_owt_en                         ),
+    .i_owt_rx_rst_wdg_owt       (owt_rx_rst_wdg_owt                 ),
+
+    .o_wdg_timeout_err          (wdg_owt_reg_slv_tmoerr             ),
+
+    .i_wdgtmo_config            (reg_com_config2.hv_wdgtmo_config   ),
+    .i_wdgcrc_config            (reg_com_config2.wdgcrc_config      ),
+
+    .i_clk	                    (i_clk                              ),
+    .i_rst_n                    (i_rst_n                            )
+);
     
-        .o_lv_hv_owt_tx             (o_lv_hv_owt_tx                     ),
-    
-        .o_owt_tx_cmd_lock          (owt_tx_cmd_lock                    ),
-        
-        .i_clk	                    (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
-    
+hv_analog_int_proc U_HV_ANALOG_INT_PRO(
+    .i_hv_vcc_uv                (i_hv_vcc_uv                        ),
+    .i_hv_vcc_ov                (i_hv_vcc_ov                        ),
+    .i_hv_ot                    (i_hv_ot                            ),
+    .i_hv_oc                    (i_hv_oc                            ),
+    .i_hv_desat_flt             (i_hv_desat_flt                     ),
+    .i_hv_scp_flt               (i_hv_scp_flt                       ),
+
+    .o_hv_vcc_uverr             (hv_vcc_uverr                       ),
+    .o_hv_vcc_overr             (hv_vcc_overr                       ),
+    .o_hv_ot_err                (hv_ot_err                          ),
+    .o_hv_oc_err                (hv_oc_err                          ),
+    .o_hv_desat_err             (hv_desat_err                       ),
+    .o_hv_scp_err               (hv_scp_err                         ),
+
+    .i_clk	                    (i_clk                              ),
+    .i_rst_n                    (i_rst_n                            )
+);
 
     
-    lv_wdg_ctrl U_LV_WDG_CTRL(
-        .i_wdg_scan_en              (wdg_scan_en                        ),
-        .o_wdg_scan_rac_rd_req      (wdg_scan_rac_rd_req                ), //wdg_scan to rac, rac = reg_access_ctrl
-        .o_wdg_scan_rac_addr        (wdg_scan_rac_addr                  ),
-        .i_rac_wdg_scan_ack         (rac_wdg_scan_ack                   ),
-        .i_rac_wdg_scan_data        (rac_wdg_scan_data                  ),
-        .i_rac_wdg_scan_crc         (rac_wdg_scan_crc                   ),
-        .o_wdg_scan_crc_err         (wdg_scan_reg_slv_crcerr            ),
-    
-        .i_bist_scan_reg_req        (bist_scan_reg_req                  ),
-        .o_scan_reg_bist_ack        (scan_reg_bist_ack                  ),
-        .o_scan_reg_bist_err        (scan_reg_bist_err                  ),
-    
-        .i_wdg_owt_en               (wdg_owt_en                         ),
-        .o_wdg_owt_tx_adc_req       (wdg_owt_adc_req                    ),
-        .i_owt_tx_wdg_adc_ack       (owt_wdg_adc_ack                    ),
-        .i_spi_rst_wdg              (spi_rst_wdg                        ),
-    
-        .i_fsm_wdg_owt_tx_req       (fsm_wdg_owt_tx_req                 ),
-        .i_bist_wdg_owt_tx_req      (bist_wdg_owt_tx_req                ),
-    
-        .i_owt_rx_wdg_rsp           (owt_rx_wdg_rsp                     ),
-        .o_wdg_owt_rx_tmo           (wdg_owt_rx_tmo                     ),
-        .o_wdg_timeout_err          (wdg_owt_reg_slv_tmoerr             ),
-    
-        .i_wdgtmo_config            (reg_com_config2.lv_wdgtmo_config   ),
-        .i_wdgrefresh_config        (reg_com_config2.wdgrefresh_config  ),
-        .i_wdgcrc_config            (reg_com_config2.wdgcrc_config      ),
-    
-        .i_clk	                    (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
-    
-    lv_hv_shadow_reg U_LV_HV_SHADOW_REG(
-        .i_owt_rx_ack               (owt_rx_ack                         ),
-        .i_owt_rx_cmd               (owt_rx_cmd                         ),
-        .i_owt_rx_data              (owt_rx_data                        ),
-        .i_owt_rx_status            (owt_rx_status                      ),//0: normal; 1: error. 
-    
-        .o_reg_die2_efuse_config    (reg_die2_efuse_config              ),
-        .o_reg_die2_efuse_status    (reg_die2_efuse_status              ),
-        .o_reg_status1              (reg_hv_status1                     ),
-        .o_reg_status2              (reg_hv_status2                     ),
-        .o_reg_status3              (reg_hv_status3                     ),
-        .o_reg_status4              (reg_hv_status4                     ),
-        .o_reg_adc1_data            (reg_hv_adc1_data                   ),
-        .o_reg_adc2_data            (reg_hv_adc2_data                   ),
-        .o_reg_bist1                (reg_hv_bist1                       ),
-        .o_reg_bist2                (reg_hv_bist2                       ),
-    
-        .i_clk	                    (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
-    
-    lv_pwm_int_proc U_LV_PWM_INT_PROC(
-        .i_lv_pwm_dt                (i_lv_pwm_dt                        ),
-        .i_lv_pwm_cmp_wave          (i_lv_pwm_cmp_wave                  ),
-        .i_lv_pwm_gate_wave         (i_lv_pwm_gate_wave                 ),
-    
-        .o_lv_pwm_mmerr             (lv_pwm_mmerr                       ),
-        .o_lv_pwm_dterr             (lv_pwm_dterr                       ),
-    
-        .i_clk	                    (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
     
     assign lv_status1 = {lv_bist_fail, 1'b0, lv_pwm_mmerr, lv_pwm_dterr,
                          wdg_owt_reg_slv_tmoerr, owt_rx_reg_slv_owtcomerr, wdg_scan_reg_slv_crcerr, spi_reg_slv_err};
@@ -573,4 +535,6 @@ lv_reg_access_ctrl U_LV_REG_ACCESS_CTRL(
     //    
     // synopsys translate_on    
     endmodule
+    
+
     
