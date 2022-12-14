@@ -46,8 +46,8 @@ module lv_wdg_ctrl #(
 //==================================
 //local param delcaration
 //==================================
-localparam [LV_SCAN_REG_NUM-1: 0] SCAN_REG_ADDR = {7'h30, 7'h0B, 7'h09, 7'h03, 7'h02, 7'h01} ;
-localparam SCAN_PTR_W                           = $clog2(LV_SCAN_REG_NUM) ;
+localparam integer unsigned SCAN_REG_ADDR[LV_SCAN_REG_NUM-1: 0]  = {7'h30, 7'h0B, 7'h09, 7'h03, 7'h02, 7'h01} ;
+localparam SCAN_PTR_W                                            = $clog2(LV_SCAN_REG_NUM) ;
 //==================================
 //var delcaration
 //==================================
@@ -280,6 +280,15 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
 
 
 
