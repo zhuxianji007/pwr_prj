@@ -142,10 +142,10 @@ package hv_pkg;
     typedef struct packed{ 
         logic [7:       6]      dvdt_en               ;
         logic                   dvdt_delay_match_en   ;
-        logic [4:       3]      rsv                   ;
+        logic [4:       3]      rsv_0                 ;
         logic                   csd_en                ;
         logic                   cap_code_sel          ;
-        logic                   rsv                   ;                                         
+        logic                   rsv_1                 ;                                         
     } str_reg_dvdt_win_value_en;
 
     typedef struct packed{ 
@@ -175,4 +175,6 @@ package hv_pkg;
 endpackage
 
 `endif //HV_PKG_SV
+
+
 
