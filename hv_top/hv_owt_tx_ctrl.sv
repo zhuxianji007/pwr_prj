@@ -17,7 +17,7 @@ module hv_owt_tx_ctrl #(
     input  logic [REG_AW-1:             0]  i_rac_owt_tx_addr       ,
     input  logic [OWT_ADCD_BIT_NUM-1:   0]  i_rac_owt_tx_data       ,
 
-    output logic                            o_lv_hv_owt_tx          ,
+    output logic                            o_hv_lv_owt_tx          ,
     
     input  logic                            i_clk	                ,
     input  logic                            i_rst_n
@@ -209,7 +209,7 @@ signal_extend #(
     .i_vld        (tx_vld               ),
     .i_vld_data   (tx_extend_bit_in     ),
     .o_vld        (lv_hv_owt_vld_nc     ),//no need to connet.
-    .o_vld_data   (o_lv_hv_owt_tx       ),
+    .o_vld_data   (o_hv_lv_owt_tx       ),
     .o_done       (tx_bit_extend_done   ),
     .i_clk        (i_clk                ),
     .i_rst_n      (i_rst_n              )
@@ -329,6 +329,10 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
+
 
 
 
