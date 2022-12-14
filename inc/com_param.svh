@@ -28,25 +28,29 @@ parameter OWT_END_TAIL_ST       = OWT_FSM_ST_W'(7)                              
 parameter OWT_ABORT_ST          = OWT_FSM_ST_W'(8)                                          ,
 
 parameter CLK_M                 =  48                                                       ,
-parameter  WDG_250US_CYC_NUM    =  250*CLK_M                                                , //one core clk cycle is (1000/48)ns, 250us has (250x1000)ns/(1000/48)ns = 250x48 cycle.
-parameter  WDG_500US_CYC_NUM    =  500*CLK_M                                                ,
-parameter WDG_1000US_CYC_NUM    = 1000*CLK_M                                                ,
-parameter WDG_2000US_CYC_NUM    = 2000*CLK_M                                                ,
-parameter WDG_SCANREG_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM}, //TH = threshold
-parameter WDG_REFRESH_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
-parameter WDG_TIMEOUT_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
-parameter WDG_INTB_TH[3: 0]     = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
-parameter WDG_CNT_W             = $clog2(WDG_2000US_CYC_NUM) ,
+parameter integer unsigned  WDG_250US_CYC_NUM    =  250*CLK_M                                                , //one core clk cycle is (1000/48)ns, 250us has (250x1000)ns/(1000/48)ns = 250x48 cycle.
+parameter integer unsigned  WDG_500US_CYC_NUM    =  500*CLK_M                                                ,
+parameter integer unsigned WDG_1000US_CYC_NUM    = 1000*CLK_M                                                ,
+parameter integer unsigned WDG_2000US_CYC_NUM    = 2000*CLK_M                                                ,
+parameter integer unsigned WDG_SCANREG_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM}, //TH = threshold
+parameter integer unsigned WDG_REFRESH_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter integer unsigned WDG_TIMEOUT_TH[3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter integer unsigned WDG_INTB_TH   [3: 0]  = {WDG_2000US_CYC_NUM, WDG_1000US_CYC_NUM, WDG_500US_CYC_NUM, WDG_250US_CYC_NUM},
+parameter WDG_CNT_W                              = $clog2(WDG_2000US_CYC_NUM),
 
 parameter PWM_INTB_EXT_CYC_NUM  = 8,
 parameter HV_DV_ID              = 4'(0),
 parameter LV_DV_ID              = 4'(0),
 
-parameter OWT_COM_ERR_SET_NUM[3: 0]  = {32, 16, 8, 4}                   ,
-parameter OWT_COM_COR_SUB_NUM[3: 0]  = {8 , 4 , 2, 1}                   ,
-parameter OWT_COM_MAX_ERR_NUM        = 512                              ,
-parameter OWT_COM_ERR_CNT_W          = $clog2(OWT_COM_MAX_ERR_NUM+1)    ,
-parameter INIT_OWT_COM_ERR_NUM       = OWT_COM_ERR_CNT_W'(32)           ,
+parameter integer unsigned OWT_COM_ERR_SET_NUM[3: 0]  = {32, 16, 8, 4}                   ,
+parameter integer unsigned OWT_COM_COR_SUB_NUM[3: 0]  = {8 , 4 , 2, 1}                   ,
+parameter OWT_COM_MAX_ERR_NUM                         = 512                              ,
+parameter OWT_COM_ERR_CNT_W                           = $clog2(OWT_COM_MAX_ERR_NUM+1)    ,
+parameter INIT_OWT_COM_ERR_NUM                        = OWT_COM_ERR_CNT_W'(32)           ,
+
+
+
+
 
 
 
