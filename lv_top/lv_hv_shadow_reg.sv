@@ -54,10 +54,10 @@ assign reg_wdata        = i_owt_rx_data                                         
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-        o_hv_ang_reg_vld <= 1'b0;
+        o_hv_reg_vld <= 1'b0;
     end
     else begin
-        o_hv_ang_reg_vld <= i_owt_rx_ack;
+        o_hv_reg_vld <= i_owt_rx_ack;
     end
 end
 
@@ -376,6 +376,13 @@ rw_reg #(
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
 
 
 
