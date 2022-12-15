@@ -13,8 +13,8 @@ module lv_analog_int_proc #(
     parameter END_OF_LIST          = 1
 )(
     input  logic           i_lv_pwm_dt          ,
-    input  logic           i_lv_pwm_cmp_wave    ,
-    input  logic           i_lv_pwm_gate_wave   ,
+    input  logic           i_lv_gate_vs_pwm     ,
+    input  logic [3:    0] i_vge_mon_dly        ,
 
     output logic           o_lv_pwm_mmerr       ,
     output logic           o_lv_pwm_dterr       ,
@@ -25,17 +25,37 @@ module lv_analog_int_proc #(
 //==================================
 //local param delcaration
 //==================================
-parameter XOR_CYC_NUM   = 4*CLK_M                ;
-parameter XOR_CNT_W     = $clog2(XOR_CYC_NUM)    ;
+localparam GATE_BACK_100NS_CYC_NUM   = ( 100*CLK_M+999)/1000 ;
+localparam GATE_BACK_200NS_CYC_NUM   = ( 200*CLK_M+999)/1000 ;
+localparam GATE_BACK_400NS_CYC_NUM   = ( 400*CLK_M+999)/1000 ;
+localparam GATE_BACK_600NS_CYC_NUM   = ( 600*CLK_M+999)/1000 ;
+localparam GATE_BACK_800NS_CYC_NUM   = ( 800*CLK_M+999)/1000 ;
+localparam GATE_BACK_1000NS_CYC_NUM  = (1000*CLK_M+999)/1000 ;
+localparam GATE_BACK_1200NS_CYC_NUM  = (1200*CLK_M+999)/1000 ;
+localparam GATE_BACK_1400NS_CYC_NUM  = (1400*CLK_M+999)/1000 ;
+localparam GATE_BACK_1600NS_CYC_NUM  = (1600*CLK_M+999)/1000 ;
+localparam GATE_BACK_1800NS_CYC_NUM  = (1800*CLK_M+999)/1000 ;
+localparam GATE_BACK_2000NS_CYC_NUM  = (2000*CLK_M+999)/1000 ;
+localparam GATE_BACK_2400NS_CYC_NUM  = (2400*CLK_M+999)/1000 ;
+localparam GATE_BACK_2800NS_CYC_NUM  = (2800*CLK_M+999)/1000 ;
+localparam GATE_BACK_3200NS_CYC_NUM  = (3200*CLK_M+999)/1000 ;
+localparam GATE_BACK_3600NS_CYC_NUM  = (3600*CLK_M+999)/1000 ;
+localparam GATE_BACK_4000NS_CYC_NUM  = (4000*CLK_M+999)/1000 ; //one core clk cycle is (1000/48)ns, 4000ns has (4x1000)ns/(1000/48)ns = 4x48 cycle.
+
+localparam integer GATE_BACK_CYC_NUM[15: 0] ={GATE_BACK_4000NS_CYC_NUM, GATE_BACK_3600NS_CYC_NUM, GATE_BACK_3200NS_CYC_NUM, GATE_BACK_2800NS_CYC_NUM,
+                                              GATE_BACK_2400NS_CYC_NUM, GATE_BACK_2000NS_CYC_NUM, GATE_BACK_1800NS_CYC_NUM, GATE_BACK_1600NS_CYC_NUM,
+                                              GATE_BACK_1400NS_CYC_NUM, GATE_BACK_1200NS_CYC_NUM, GATE_BACK_1000NS_CYC_NUM, GATE_BACK_800NS_CYC_NUM ,
+                                              GATE_BACK_600NS_CYC_NUM , GATE_BACK_400NS_CYC_NUM , GATE_BACK_200NS_CYC_NUM , GATE_BACK_100NS_CYC_NUM};
+
+
+localparam CNT_W     = $clog2(GATE_BACK_4000NS_CYC_NUM);
 //==================================
 //var delcaration
 //==================================
 logic                    lv_pwm_dt_sync         ;
 logic                    lv_pwm_dt_sync_ff      ;
-logic                    lv_pwm_cmp_wave_sync   ;
-logic                    lv_pwm_gate_wave_sync  ;
-logic                    lv_pwm_xor             ;
-logic [XOR_CNT_W-1:   0] xor_cnt                ;
+logic                    lv_gate_vs_pwm_sync    ;
+logic [CNT_W-1:       0] cnt                    ;
 //==================================
 //main code
 //==================================
@@ -52,19 +72,9 @@ gnrl_sync #(
 gnrl_sync #(
     .DW             (1                      ),
     .DEF_VAL        (1'b0                   )
-)U_LV_PWM_CMP_WAVE_SYNC(
-    .i_data         (i_lv_pwm_cmp_wave      ) ,
-    .o_data         (lv_pwm_cmp_wave_sync   ) ,
-    .i_clk	        (i_clk                  ) ,
-    .i_rst_n        (i_rst_n                )
-);
-
-gnrl_sync #(
-    .DW             (1                      ),
-    .DEF_VAL        (1'b0                   )
-)U_LV_PWM_GATE_WAVE_SYNC(
-    .i_data         (i_lv_pwm_gate_wave     ) ,
-    .o_data         (lv_pwm_gate_wave_sync  ) ,
+)U_LV_GATE_VS_PWM_SYNC(
+    .i_data         (i_lv_gate_vs_pwm       ) ,
+    .o_data         (lv_gate_vs_pwm_sync    ) ,
     .i_clk	        (i_clk                  ) ,
     .i_rst_n        (i_rst_n                )
 );
@@ -80,21 +90,19 @@ end
 
 assign o_lv_pwm_dterr = lv_pwm_dt_sync & ~lv_pwm_dt_sync_ff;
 
-assign lv_pwm_xor = lv_pwm_cmp_wave_sync ^ lv_pwm_gate_wave_sync;
-
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-	    xor_cnt <= XOR_CNT_W'(0);
+	    cnt <= CNT_W'(0);
 	end
-    else if(lv_pwm_xor) begin
-        xor_cnt <= (xor_cnt==(XOR_CYC_NUM-1)) ? xor_cnt : (xor_cnt+1'b1);
+    else if(lv_gate_vs_pwm_sync) begin
+        cnt <= (cnt==(GATE_BACK_CYC_NUM[i_vge_mon_dly]-1)) ? cnt : (cnt+1'b1);
     end
     else begin
-	    xor_cnt <= XOR_CNT_W'(0);
+	    cnt <= CNT_W'(0);
     end
 end
 
-assign o_lv_pwm_mmerr = (xor_cnt==(XOR_CYC_NUM-1)) & lv_pwm_xor;
+assign o_lv_pwm_mmerr = (cnt==(GATE_BACK_CYC_NUM[i_vge_mon_dly]-1)) & lv_gate_vs_pwm_sync;
 
 // synopsys translate_off    
 //==================================
@@ -103,4 +111,6 @@ assign o_lv_pwm_mmerr = (xor_cnt==(XOR_CYC_NUM-1)) & lv_pwm_xor;
 //    
 // synopsys translate_on    
 endmodule
+
+
 
