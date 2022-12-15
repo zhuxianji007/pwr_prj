@@ -81,7 +81,7 @@ gnrl_sync #(
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-	    lv_pwm_dt_ff <= 1'b0;
+	    lv_pwm_dt_sync_ff <= 1'b0;
 	end
     else begin
 	    lv_pwm_dt_sync_ff <= lv_pwm_dt_sync;    
@@ -111,6 +111,8 @@ assign o_lv_pwm_mmerr = (cnt==(GATE_BACK_CYC_NUM[i_vge_mon_dly]-1)) & lv_gate_vs
 //    
 // synopsys translate_on    
 endmodule
+
+
 
 
 
