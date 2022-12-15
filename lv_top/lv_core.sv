@@ -18,37 +18,40 @@ module lv_core import com_pkg::*; import lv_pkg::*;
     input  logic                                        i_spi_mosi                      ,
     output logic                                        o_spi_miso                      , 
 
+    input  logic                                        i_s32_sel                       , //1: sel 32pin logic; 0: sel 16pin logic
+    input  logic                                        i_scan_mode                     ,
+
     output logic                                        o_lv_hv_owt_tx                  ,
     input  logic                                        i_hv_lv_owt_rx                  ,
 
-    input  logic                                        i_pwr_on                        ,
+    input  logic                                        i_setb                          ,
     input  logic                                        i_io_test_mode                  ,
     input  logic                                        i_io_fsenb_n                    ,
-    output logic                                        o_fsm_ang_test_en               ,
+    output logic                                        o_fsm_ang_test_en               ,//vl_pins32
     input  logic                                        i_hv_pwm_intb_n                 ,
-    input  logic 		                                i_bist_lv_ov                    ,
     input  logic                                        i_lv_vsup_ov                    ,
     input  logic                                        i_lv_vsup_uv_n                  ,
     input  logic                                        i_lv_pwm_dt                     ,
-    input  logic                                        i_lv_pwm_cmp_wave               ,
-    input  logic                                        i_lv_pwm_gate_wave              ,
+    input  logic                                        i_lv_gate_vs_pwm                ,
 
-    input  logic                                        i_vrtmon                        ,
-    input  logic                                        i_io_fsifo                      ,
     input  logic                                        i_io_pwma                       ,
     input  logic                                        i_io_pwm                        ,
     input  logic                                        i_io_fsstate                    ,
-    input  logic                                        i_io_fsenb                      ,
-    input  logic                                        i_io_intb_lv                    ,
-    input  logic                                        i_io_intb_hv                    ,
-
-    input  logic                                        i_ang_dgt_pwm_wv                , //analog pwm ctrl to digtial pwm ctrl pwm wave
-    input  logic                                        i_ang_dgt_pwm_fs                ,
+    input  logic                                        i_io_intb                       ,
+    input  logic                                        i_io_inta                       ,
 
     output logic                                        o_dgt_ang_pwm_en                ,
     output logic                                        o_dgt_ang_fsc_en                ,
-    output logic                                        o_io_pwm_l2h                    ,
   
+    output logic [7:    0]                              o_adc1_data                     ,
+    output logic [7:    0]                              o_adc2_data                     ,
+    output logic                                        o_adc1_en                       ,
+    output logic                                        o_adc2_en                       ,
+    output logic                                        o_aout_wait                     ,
+    output logic                                        o_aout_bist                     ,
+    output logic                                        o_rtmon                         ,
+    output logic                                        o_bistlv_ov                     ,
+
     output str_reg_iso_bgr_trim                         o_reg_iso_bgr_trim              ,
     output str_reg_iso_con_ibias_trim                   o_reg_iso_con_ibias_trim        ,
     output str_reg_iso_osc48m_trim                      o_reg_iso_osc48m_trim           ,
@@ -58,6 +61,7 @@ module lv_core import com_pkg::*; import lv_pkg::*;
     output str_reg_iso_demo_trim                        o_reg_iso_demo_trim             ,
     output str_reg_iso_test_sw                          o_reg_iso_test_sw               ,
     output str_reg_iso_osc_jit                          o_reg_iso_osc_jit               ,
+    output logic [7:    0]                              o_reg_ana_reserved_reg          ,
     output str_reg_config0_t_deat_time                  o_reg_config0_t_deat_time       ,
 
     output logic                                        o_intb_n                        ,
@@ -151,6 +155,7 @@ logic [REG_DW-1:             0]                     lv_status2              ;
 logic [REG_DW-1:             0]                     lv_status3              ;
 logic [REG_DW-1:             0]                     lv_status4              ;
 
+
 str_reg_efuse_config                                reg_die2_efuse_config   ;
 str_reg_efuse_status                                reg_die2_efuse_status   ;
 logic [REG_DW-1:             0]                     reg_hv_status1          ;
@@ -161,6 +166,9 @@ logic [ADC_DW-1:             0]                     reg_hv_adc1_data        ;
 logic [ADC_DW-1:             0]                     reg_hv_adc2_data        ;
 logic [REG_DW-1:             0]                     reg_hv_bist1            ;
 logic [REG_DW-1:             0]                     reg_hv_bist2            ;
+
+logic                                               hv_reg_vld              ;
+logic [REG_DW-1:             0]                     hv_ang_reg_data         ;
 
 logic                                               efuse_reg_update        ;
 logic [EFUSE_DATA_NUM-1:     0][EFUSE_DW-1: 0]      efuse_reg_data          ;
@@ -253,6 +261,9 @@ lv_reg_access_ctrl U_LV_REG_ACCESS_CTRL(
     .i_reg_rac_rack             (reg_rac_rack                       ),
     .i_reg_rac_rdata            (reg_rac_rdata                      ),
     .i_reg_rac_rcrc             (reg_rac_rcrc                       ),
+
+    .i_hv_reg_vld               (hv_reg_vld                         ),
+    .i_hv_ang_reg_data          (hv_ang_reg_data                    ),
 
     .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
@@ -347,20 +358,23 @@ lv_hv_shadow_reg U_LV_HV_SHADOW_REG(
     .o_reg_bist1                (reg_hv_bist1                       ),
     .o_reg_bist2                (reg_hv_bist2                       ),
 
+    .o_hv_reg_vld               (hv_reg_vld                         ),
+    .o_hv_ang_reg_data          (hv_ang_reg_data                    ),
+
     .i_clk	                    (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
 lv_analog_int_proc U_LV_ANALOG_INT_PROC(
-    .i_lv_pwm_dt                (i_lv_pwm_dt                        ),
-    .i_lv_pwm_cmp_wave          (i_lv_pwm_cmp_wave                  ),
-    .i_lv_pwm_gate_wave         (i_lv_pwm_gate_wave                 ),
+    .i_lv_pwm_dt                (i_lv_pwm_dt                            ),
+    .i_lv_gate_vs_pwm           (i_lv_gate_vs_pwm                       ),
+    .i_vge_mon_dly              (o_reg_config0_t_deat_time.vge_mon_dly  ),
 
-    .o_lv_pwm_mmerr             (lv_pwm_mmerr                       ),
-    .o_lv_pwm_dterr             (lv_pwm_dterr                       ),
+    .o_lv_pwm_mmerr             (lv_pwm_mmerr                           ),
+    .o_lv_pwm_dterr             (lv_pwm_dterr                           ),
 
-    .i_clk	                    (i_clk                              ),
-    .i_rst_n                    (i_rst_n                            )
+    .i_clk	                    (i_clk                                  ),
+    .i_rst_n                    (i_rst_n                                )
 );
 
 assign lv_status1 = {lv_bist_fail, 1'b0, lv_pwm_mmerr, lv_pwm_dterr,
@@ -368,8 +382,8 @@ assign lv_status1 = {lv_bist_fail, 1'b0, lv_pwm_mmerr, lv_pwm_dterr,
 
 assign lv_status2 = {6'b0, i_lv_vsup_ov, ~i_lv_vsup_uv_n};
 
-assign lv_status3 = {i_vrtmon,     i_io_fsifo, i_io_pwma, i_io_pwm,
-                     i_io_fsstate, i_io_fsenb, i_io_intb_lv, i_io_intb_hv};
+assign lv_status3 = {1'b0,         1'b0,         i_io_pwma, i_io_pwm,
+                     i_io_fsstate, i_io_fsenb_n, i_io_intb, i_io_inta};
 
 assign lv_status4 = {4'b0, lv_ctrl_cur_st};   
 
@@ -424,6 +438,7 @@ lv_reg_slv U_LV_REG_SLV(
     .o_reg_iso_demo_trim        (o_reg_iso_demo_trim                ),
     .o_reg_iso_test_sw          (o_reg_iso_test_sw                  ),
     .o_reg_iso_osc_jit          (o_reg_iso_osc_jit                  ),
+    .o_reg_ana_reserved_reg     (o_reg_ana_reserved_reg             ),
     .o_reg_config0_t_deat_time  (o_reg_config0_t_deat_time          ),
     
     .i_test_st_reg_en           (test_st_reg_en                     ),
@@ -436,8 +451,14 @@ lv_reg_slv U_LV_REG_SLV(
     .o_rst_n                    (                                   )
 );
 
+assign o_adc1_en    = reg_mode.adc1_en          ;
+assign o_adc2_en    = reg_mode.adc2_en          ;
+assign o_adc1_data  = reg_hv_adc1_data[9: 2]    ;
+assign o_adc2_data  = reg_hv_adc2_data[9: 2]    ;
+assign o_rtmon      = reg_com_config1.rtmon     ;
+
 lv_ctrl_unit U_LV_CTRL_UNIT(
-    .i_pwr_on                   (i_pwr_on                           ),
+    .i_pwr_on                   (i_rst_n                            ),
     .i_io_test_mode             (i_io_test_mode                     ),
     .i_reg_efuse_vld            (o_reg_iso_reserved_reg.efuse_vld   ),
     .i_reg_efuse_done           (reg_mode.efuse_done                ),//soft lanch, make test_st -> wait_st
@@ -472,6 +493,8 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     .o_spi_ctrl_reg_en          (spi_ctrl_reg_en                    ),//when spi enable support reg read & write.
     .o_bist_en                  (bist_en                            ),
     .o_fsm_ang_test_en          (o_fsm_ang_test_en                  ),//ctrl analog mdl into test mode.
+    .o_aout_wait                (o_aout_wait                        ),
+    .o_aout_bist                (o_aout_bist                        ),
 
     .i_hv_intb_n                (hv_intb_n                          ),
     .o_intb_n                   (o_intb_n                           ),
@@ -498,9 +521,10 @@ lv_pwm_intb_decode U_LV_PWM_INTB_DECODE(
 
 lv_abist U_LV_ABIST(
     .i_bist_en                  (bist_en                            ),     
-    .i_bist_lv_ov               (i_bist_lv_ov                       ),
     .i_lv_vsup_ov               (i_lv_vsup_ov                       ),
     .o_lbist_en                 (lbist_en                           ),
+    .o_lv_abist_fail            (                                   ),
+    .o_bistlv_ov                (o_bistlv_ov                        ),
     .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
@@ -519,13 +543,13 @@ lv_lbist U_LV_LBIST(
 );
 
 lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
-    .i_ang_dgt_pwm_wv           (i_ang_dgt_pwm_wv                   ), //analog pwm ctrl to digtial pwm ctrl pwm wave
-    .i_ang_dgt_pwm_fs           (i_ang_dgt_pwm_fs                   ),
+    .i_ang_dgt_pwm_wv           (1'b0                               ), //analog pwm ctrl to digtial pwm ctrl pwm wave
+    .i_ang_dgt_pwm_fs           (1'b0                               ),
     .i_fsm_dgt_pwm_en           (fsm_dgt_pwm_en                     ),
     .i_fsm_dgt_fsc_en           (fsm_dgt_fsc_en                     ),
     .o_dgt_ang_pwm_en           (o_dgt_ang_pwm_en                   ),
     .o_dgt_ang_fsc_en           (o_dgt_ang_fsc_en                   ),
-    .o_io_pwm_l2h               (o_io_pwm_l2h                       ),
+    .o_io_pwm_l2h               (                                   ),
     .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
@@ -536,6 +560,10 @@ lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
 
 
 
