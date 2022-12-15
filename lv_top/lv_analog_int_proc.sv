@@ -65,7 +65,7 @@ gnrl_sync #(
 )U_LV_PWM_DT_SYNC(
     .i_data         (i_lv_pwm_dt            ) ,
     .o_data         (lv_pwm_dt_sync         ) ,
-    .i_clk	        (i_clk                  ) ,
+    .i_clk          (i_clk                  ) ,
     .i_rst_n        (i_rst_n                )
 );
 
@@ -75,7 +75,7 @@ gnrl_sync #(
 )U_LV_GATE_VS_PWM_SYNC(
     .i_data         (i_lv_gate_vs_pwm       ) ,
     .o_data         (lv_gate_vs_pwm_sync    ) ,
-    .i_clk	        (i_clk                  ) ,
+    .i_clk          (i_clk                  ) ,
     .i_rst_n        (i_rst_n                )
 );
 
@@ -111,6 +111,7 @@ assign o_lv_pwm_mmerr = (cnt==(GATE_BACK_CYC_NUM[i_vge_mon_dly]-1)) & lv_gate_vs
 //    
 // synopsys translate_on    
 endmodule
+
 
 
 
