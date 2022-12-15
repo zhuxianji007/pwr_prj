@@ -47,6 +47,8 @@ module lv_ctrl_unit #(
     output logic                            o_spi_ctrl_reg_en   ,//when spi enable support reg read & write.
     output logic                            o_bist_en           ,
     output logic                            o_fsm_ang_test_en   ,//ctrl analog mdl into test mode.
+    output logic                            o_aout_wait         ,
+    output logic                            o_aout_bist         ,
 
     input  logic                            i_hv_intb_n         ,
     output logic                            o_intb_n            ,
@@ -78,14 +80,17 @@ logic                               effect_pwm_err      ;
 logic                               fault_st_pwm_en     ;
 logic                               cfg_st_intb_n_en    ;
 logic                               lv_intb_n           ;
+logic                               lv_pwm_mmerr        ;
 //==================================
 //main code
 //==================================
+assign lv_pwm_mmerr = i_reg_lv_pwm_mmerr & (lv_ctrl_cur_st!=FAILSAFE_ST);
+
 assign lvhv_err0 = i_reg_lv_pwm_dterr | i_reg_lv_pwm_mmerr | i_reg_lv_vsup_uverr | i_reg_lv_vsup_overr | i_reg_hv_vcc_uverr |
                    i_reg_hv_vcc_overr | i_reg_hv_ot_err    | i_reg_hv_oc_err     | i_reg_hv_desat_err  | i_reg_hv_scp_err;
     
-assign lvhv_err1 = i_reg_lv_pwm_mmerr | i_reg_lv_vsup_uverr| i_reg_lv_vsup_overr | i_reg_hv_vcc_uverr  | 
-                   i_reg_hv_vcc_overr | i_reg_hv_ot_err    | i_reg_hv_desat_err  | i_reg_hv_scp_err;
+assign lvhv_err1 = lv_pwm_mmerr | i_reg_lv_vsup_uverr| i_reg_lv_vsup_overr | i_reg_hv_vcc_uverr  | 
+                   i_reg_hv_vcc_overr | i_reg_hv_ot_err | i_reg_hv_desat_err  | i_reg_hv_scp_err;
 
 assign lvhv_err2 = i_reg_lv_pwm_dterr | i_reg_hv_oc_err;
 
@@ -324,7 +329,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_cfg_st_reg_en <= 1'b0;
     end
-    else if(lv_ctrl_nxt_st==TEST_ST) begin
+    else if(lv_ctrl_nxt_st==CFG_ST) begin
         o_cfg_st_reg_en <= 1'b1;
     end
     else begin
@@ -337,7 +342,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         o_test_st_reg_en  <= 1'b0;
         o_fsm_ang_test_en <= 1'b0;
     end
-    else if(lv_ctrl_nxt_st==CFG_ST) begin
+    else if(lv_ctrl_nxt_st==TEST_ST) begin
         o_test_st_reg_en  <= 1'b1;
         o_fsm_ang_test_en <= 1'b1;
     end
@@ -377,6 +382,31 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         o_intb_n <= lv_intb_n | i_hv_intb_n;
     end
 end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_aout_wait <= 1'b0;
+    end
+    else if(lv_ctrl_nxt_st==WAIT_ST) begin
+        o_aout_wait <= 1'b1;
+    end
+    else begin
+        o_aout_wait <= 1'b0;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_aout_bist <= 1'b0;
+    end
+    else if(lv_ctrl_nxt_st==BIST_ST) begin
+        o_aout_bist <= 1'b1;
+    end
+    else begin
+        o_aout_bist <= 1'b0;
+    end
+end
+
 // synopsys translate_off    
 //==================================
 //assertion
@@ -386,6 +416,41 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
