@@ -19,3 +19,4 @@ $PRJ_ROOT/lv_top/lv_reg_access_ctrl.sv
 $PRJ_ROOT/lv_top/lv_reg_slv.sv
 $PRJ_ROOT/lv_top/lv_wdg_ctrl.sv
 $PRJ_ROOT/lv_top/lv_core.sv
+$PRJ_ROOT/lv_top/lv_wrap.sv
