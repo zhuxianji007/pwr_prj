@@ -29,6 +29,9 @@ module lv_hv_shadow_reg import com_pkg::*;
     output logic [REG_DW-1:             0]  o_reg_bist1             ,
     output logic [REG_DW-1:             0]  o_reg_bist2             ,
 
+    output logic                            o_hv_reg_vld            ,
+    output logic [REG_DW-1:             0]  o_hv_ang_reg_data       ,
+
     input  logic                            i_clk                   ,
     input  logic                            i_rst_n
  );
@@ -39,15 +42,33 @@ module lv_hv_shadow_reg import com_pkg::*;
 //==================================
 //var delcaration
 //==================================
-logic                  reg_wen  ;
-logic [REG_AW-1:    0] reg_addr ;
-logic [2*ADC_DW-1:  0] reg_wdata;              
+logic                  reg_wen          ;
+logic [REG_AW-1:    0] reg_addr         ;
+logic [2*ADC_DW-1:  0] reg_wdata        ;             
 //==================================
 //main code
 //==================================
-assign reg_wen   = i_owt_rx_ack & ~i_owt_rx_status & i_owt_rx_cmd[OWT_CMD_BIT_NUM-1]    ;
-assign reg_addr  = i_owt_rx_cmd[OWT_CMD_BIT_NUM-2: 0]                                   ;
-assign reg_wdata = i_owt_rx_data                                                        ;
+assign reg_wen          = i_owt_rx_ack & ~i_owt_rx_status & i_owt_rx_cmd[OWT_CMD_BIT_NUM-1]         ;
+assign reg_addr         = i_owt_rx_cmd[OWT_CMD_BIT_NUM-2: 0]                                        ;
+assign reg_wdata        = i_owt_rx_data                                                             ;
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_hv_ang_reg_vld <= 1'b0;
+    end
+    else begin
+        o_hv_ang_reg_vld <= i_owt_rx_ack;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_hv_ang_reg_data <= REG_DW'(0);
+    end
+    else begin
+        o_hv_ang_reg_data <= i_owt_rx_data;
+    end
+end
 
 rw_reg #(
     .DW                     (REG_DW     ),
@@ -355,6 +376,13 @@ rw_reg #(
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
 
 
 
