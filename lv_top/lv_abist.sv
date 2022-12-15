@@ -14,10 +14,11 @@ module lv_abist #(
 )(
     input  logic 		   i_bist_en            , 
 
-    input  logic 		   i_bist_lv_ov         ,
     input  logic           i_lv_vsup_ov         ,
 
     output logic           o_lbist_en           ,
+	output logic 		   o_lv_abist_fail      ,
+	output logic 		   o_bistlv_ov 			,
     input  logic           i_clk                ,
     input  logic           i_rst_n
  );
@@ -30,8 +31,7 @@ parameter BIST_CNT_W           = $clog2(BIST_70US_CYC_NUM+1)  ;
 //var delcaration
 //==================================
 logic [BIST_CNT_W-1: 0]  bist_cnt           ;
-logic                    lv_abist_status    ;
-logic                    lv_abist_status_ff ;
+logic                    lv_abist_fail      ;
 //==================================
 //main code
 //==================================
@@ -39,7 +39,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
 	    bist_cnt <= BIST_CNT_W'(0);
 	end
-  	else if(i_bist_lv_ov) begin
+  	else if(i_bist_en) begin
 	    bist_cnt <= (bist_cnt==BIST_70US_CYC_NUM) ? bist_cnt : (bist_cnt+1'b1);
 	end
     else begin
@@ -49,35 +49,47 @@ end
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
-	    lv_abist_status <= 1'b0;
+	    lv_abist_fail <= 1'b0;
 	end
-  	else if(i_lv_vsup_ov & (bist_cnt<BIST_70US_CYC_NUM)) begin
-	    lv_abist_status <= 1'b1;
+	else if(i_bist_en) begin
+  		if(i_lv_vsup_ov & (bist_cnt<BIST_70US_CYC_NUM)) begin
+		    lv_abist_fail <= 1'b0;
+		end
+		else if(~i_lv_vsup_ov & (bist_cnt>=BIST_70US_CYC_NUM)) begin
+		    lv_abist_fail <= 1'b1;		
+		end
 	end
-    else;
+    else begin
+	    lv_abist_fail <= 1'b0;	
+	end
 end
 
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-	    lv_abist_status_ff <= 1'b0;
-	end
-  	else begin
-	    lv_abist_status_ff <= lv_abist_status;
-	end
-end
+assign o_lv_abist_fail = lv_abist_fail;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
 	    o_lbist_en <= 1'b0;
 	end
   	else if(i_bist_en) begin
-        if(lv_abist_status & ~lv_abist_status_ff) begin
+        if(bist_cnt>=BIST_70US_CYC_NUM) begin
 	        o_lbist_en <= 1'b1;
         end
         else;
 	end
     else begin
 	    o_lbist_en <= 1'b0;    
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+	    o_bistlv_ov <= 1'b0;
+	end
+  	else if(i_bist_en) begin
+	    o_bistlv_ov <= (bist_cnt<BIST_70US_CYC_NUM) ? 1'b1 : 1'b0;
+	end
+    else begin
+	    o_bistlv_ov <= 1'b0;  
     end
 end
 // synopsys translate_off    
@@ -87,4 +99,6 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
 
