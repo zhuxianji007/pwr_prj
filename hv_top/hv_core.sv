@@ -233,7 +233,7 @@ spi_slv U_SPI_SLV(
 
     .o_spi_err                  (spi_reg_slv_err                    ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -251,7 +251,7 @@ hv_owt_rx_ctrl U_HV_OWT_RX_CTRL(
     .i_reg_comerr_config        (reg_com_config1.comerr_config      ),
     .o_owt_com_err              (owt_rx_reg_slv_owtcomerr           ),
        
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
    
@@ -330,7 +330,7 @@ lv_wdg_ctrl U_LV_WDG_CTRL(
     .i_wdgtmo_config            (reg_com_config2.hv_wdgtmo_config   ),
     .i_wdgcrc_config            (reg_com_config2.wdgcrc_config      ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
     
@@ -349,7 +349,7 @@ hv_analog_int_proc U_HV_ANALOG_INT_PRO(
     .o_hv_desat_err             (hv_desat_err                       ),
     .o_hv_scp_err               (hv_scp_err                         ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
     
@@ -525,7 +525,7 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     
     .o_lv_ctrl_cur_st           (lv_ctrl_cur_st                     ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -581,6 +581,9 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     // synopsys translate_on    
     endmodule
     
+
+    
+
 
     
 
