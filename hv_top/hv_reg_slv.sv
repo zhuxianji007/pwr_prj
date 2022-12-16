@@ -37,6 +37,8 @@ module hv_reg_slv import com_pkg::*; import hv_pkg::*;
     input logic [REG_DW-1:         0]                   i_hv_bist1                      ,
     input logic [REG_DW-1:         0]                   i_hv_bist2                      ,
 
+    input logic [5:                0]                   i_cnt_del_read                  ,
+
     input logic                                         i_efuse_reg_update              ,
     input logic [EFUSE_DATA_NUM-1: 0][EFUSE_DW-1: 0]    i_efuse_reg_data                ,
 
@@ -78,7 +80,6 @@ module hv_reg_slv import com_pkg::*; import hv_pkg::*;
     output str_reg_adc_adj2                             o_reg_adc_adj2                  , 
     output str_reg_ibias_code_drv                       o_reg_ibias_code_drv            ,
     output str_reg_dvdt_tm                              o_reg_dvdt_tm                   , 
-    output str_reg_cnt_del_read                         o_reg_cnt_del_read              , 
     output str_reg_dvdt_win_value_en                    o_reg_dvdt_win_value_en         , 
     output str_reg_preset_delay                         o_reg_preset_delay              , 
     output str_reg_drive_delay_set                      o_reg_drive_delay_set           ,
@@ -150,7 +151,26 @@ logic [REG_DW-1:    0] rdata_config8_oc_sel             ;
 logic [REG_CRC_W-1: 0] rcrc_config8_oc_sel              ;
 logic [REG_DW-1:    0] rdata_config9_sc_sel             ;
 logic [REG_CRC_W-1: 0] rcrc_config9_sc_sel              ;
-
+logic [REG_DW-1:    0] rdata_config10_dvdt_ref_src      ;
+logic [REG_CRC_W-1: 0] rcrc_config10_dvdt_ref_src       ;
+logic [REG_DW-1:    0] rdata_config11_dvdt_ref_sink     ;
+logic [REG_CRC_W-1: 0] rcrc_config11_dvdt_ref_sink      ;
+logic [REG_DW-1:    0] rdata_config12_adc_en            ;
+logic [REG_CRC_W-1: 0] rcrc_config12_adc_en             ;
+logic [REG_DW-1:    0] rdata_bgr_code_drv               ;
+logic [REG_DW-1:    0] rdata_cap_trim_code              ;
+logic [REG_DW-1:    0] rdata_csdel_cmp                  ;
+logic [REG_DW-1:    0] rdata_dvdt_value_adj             ;
+logic [REG_DW-1:    0] rdata_adc_adj1                   ;
+logic [REG_DW-1:    0] rdata_adc_adj2                   ;
+logic [REG_DW-1:    0] rdata_ibias_code_drv             ;
+logic [REG_DW-1:    0] rdata_dvdt_tm                    ;
+logic [REG_DW-1:    0] rdata_cnt_del_read               ;
+logic [REG_DW-1:    0] rdata_dvdt_win_value_en          ;
+logic [REG_DW-1:    0] rdata_drive_delay_set            ;
+logic [REG_DW-1:    0] rdata_cmp_del                    ;
+logic [REG_DW-1:    0] rdata_test_mux                   ;
+logic [REG_DW-1:    0] rdata_cmp_adj_vreg               ;
 
 logic [REG_DW-1:    0] reg_die2_efuse_config            ;
 logic [REG_DW-1:    0] reg_die2_efuse_status            ;
@@ -177,6 +197,21 @@ logic [REG_DW-1:    0] reg_config6_desat_sel1           ;
 logic [REG_DW-1:    0] reg_config7_desat_sel2           ;
 logic [REG_DW-1:    0] reg_config8_oc_sel               ;
 logic [REG_DW-1:    0] reg_config9_sc_sel               ;
+logic [REG_DW-1:    0] reg_config10_dvdt_ref_src        ;
+logic [REG_DW-1:    0] reg_config11_dvdt_ref_sink       ;
+logic [REG_DW-1:    0] reg_config12_adc_en              ;
+logic [REG_DW-1:    0] reg_bgr_code_drv                 ;
+logic [REG_DW-1:    0] reg_cap_trim_code                ;
+logic [REG_DW-1:    0] reg_csdel_cmp                    ;
+logic [REG_DW-1:    0] reg_dvdt_value_adj               ;
+logic [REG_DW-1:    0] reg_adc_adj1                     ;
+logic [REG_DW-1:    0] reg_adc_adj2                     ;
+logic [REG_DW-1:    0] reg_dvdt_tm                      ;
+logic [REG_DW-1:    0] reg_dvdt_win_value_en            ;
+logic [REG_DW-1:    0] reg_drive_delay_set              ;
+logic [REG_DW-1:    0] reg_cmp_del                      ;
+logic [REG_DW-1:    0] reg_test_mux                     ;
+
 //==================================
 //var delcaration
 //==================================
@@ -600,7 +635,7 @@ rww_reg #(
     .SUPPORT_SPI_EN_WR      (1'b0       ),
     .SUPPORT_SPI_EN_RD      (1'b0       ),
     .SUPPORT_EFUSE_WR       (1'b1       )
-)U_ISO_OSCB_FREQ_ADJ(
+)U_ISO_RESERVED_REG(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
     .i_test_st_reg_en     (i_test_st_reg_en                             ),
@@ -1112,6 +1147,588 @@ rw_reg #(
 
 assign o_reg_config9_sc_sel = reg_config9_sc_sel;
 
+//CONFIG10_DVDT_REF_SRC REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h03      ),
+    .REG_ADDR               (7'h59      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_CONFIG10_DVDT_REF_SRC(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_config10_dvdt_ref_src                  ),
+    .o_reg_data           (reg_config10_dvdt_ref_src                    ),
+    .o_rcrc               (rcrc_config10_dvdt_ref_src                   ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_config10_dvdt_ref_src = reg_config10_dvdt_ref_src;
+
+//CONFIG11_DVDT_REF_SINK REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h03      ),
+    .REG_ADDR               (7'h5A      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_CONFIG11_DVDT_REF_SINK(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_config11_dvdt_ref_sink                 ),
+    .o_reg_data           (reg_config11_dvdt_ref_sink                   ),
+    .o_rcrc               (rcrc_config11_dvdt_ref_sink                  ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_config11_dvdt_ref_sink = reg_config11_dvdt_ref_sink;
+
+//CONFIG12_ADC_EN REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h00      ),
+    .REG_ADDR               (7'h5A      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b1       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_CONFIG12_ADC_EN(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_config12_adc_en                        ),
+    .o_reg_data           (reg_config12_adc_en                          ),
+    .o_rcrc               (rcrc_config12_adc_en                         ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_config12_adc_en = reg_config12_adc_en;
+
+//BGR_CODE_DRV REGISTER
+rww_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h00      ),
+    .REG_ADDR               (7'h60      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
+)U_BGR_CODE_DRV(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (i_spi_reg_wdata                              ),
+    .o_rdata              (rdata_bgr_code_drv                           ),
+    .o_reg_data           (reg_bgr_code_drv                             ),
+    .i_lgc_wen            (i_efuse_reg_update                           ),
+    .i_lgc_wdata          (i_efuse_reg_data[9]                          ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_bgr_code_drv = reg_bgr_code_drv;
+
+//CAP_TRIM_CODE REGISTER
+rww_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h88      ),
+    .REG_ADDR               (7'h61      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
+)U_CAP_TRIM_CODE(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (i_spi_reg_wdata                              ),
+    .o_rdata              (rdata_cap_trim_code                          ),
+    .o_reg_data           (reg_cap_trim_code                            ),
+    .i_lgc_wen            (i_efuse_reg_update                           ),
+    .i_lgc_wdata          (i_efuse_reg_data[10]                         ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_cap_trim_code = reg_cap_trim_code;
+
+//CSDEL_CMP REGISTER
+rww_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h70      ),
+    .REG_ADDR               (7'h62      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
+)U_CSDEL_CMP(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (i_spi_reg_wdata                              ),
+    .o_rdata              (rdata_csdel_cmp                              ),
+    .o_reg_data           (reg_csdel_cmp                                ),
+    .i_lgc_wen            (i_efuse_reg_update                           ),
+    .i_lgc_wdata          (i_efuse_reg_data[11]                         ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_csdel_cmp = reg_csdel_cmp;
+
+//DVDT_VALUE_ADJ REGISTER
+rww_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h88      ),
+    .REG_ADDR               (7'h63      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
+)U_DVDT_VALUE_ADJ(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (i_spi_reg_wdata                              ),
+    .o_rdata              (rdata_dvdt_value_adj                         ),
+    .o_reg_data           (reg_dvdt_value_adj                           ),
+    .i_lgc_wen            (i_efuse_reg_update                           ),
+    .i_lgc_wdata          (i_efuse_reg_data[12]                         ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_dvdt_value_adj = reg_dvdt_value_adj;
+
+//ADC_ADJ1 REGISTER
+rww_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h88      ),
+    .REG_ADDR               (7'h64      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
+)U_ADC_ADJ1(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (i_spi_reg_wdata                              ),
+    .o_rdata              (rdata_adc_adj1                               ),
+    .o_reg_data           (reg_adc_adj1                                 ),
+    .i_lgc_wen            (i_efuse_reg_update                           ),
+    .i_lgc_wdata          (i_efuse_reg_data[13]                         ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_adc_adj1 = reg_adc_adj1;
+
+//ADC_ADJ2 REGISTER
+rww_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h08      ),
+    .REG_ADDR               (7'h65      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
+)U_ADC_ADJ2(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (i_spi_reg_wdata                              ),
+    .o_rdata              (rdata_adc_adj2                               ),
+    .o_reg_data           (reg_adc_adj2                                 ),
+    .i_lgc_wen            (i_efuse_reg_update                           ),
+    .i_lgc_wdata          (i_efuse_reg_data[14]                         ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_adc_adj2 = reg_adc_adj2;
+
+//IBIAS_CODE_DRV REGISTER
+rww_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h10      ),
+    .REG_ADDR               (7'h66      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b1       )
+)U_IBIAS_CODE_DRV(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (i_spi_reg_wdata                              ),
+    .o_rdata              (rdata_ibias_code_drv                         ),
+    .o_reg_data           (reg_ibias_code_drv                           ),
+    .i_lgc_wen            (i_efuse_reg_update                           ),
+    .i_lgc_wdata          (i_efuse_reg_data[15]                         ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_ibias_code_drv = reg_ibias_code_drv;
+
+//DVDT_TM REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h00      ),
+    .REG_ADDR               (7'h67      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_DVDT_TM(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_dvdt_tm                                ),
+    .o_reg_data           (reg_dvdt_tm                                  ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_dvdt_tm = reg_dvdt_tm;
+
+//CNT_DEL_READ REGISTER
+ro_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .REG_ADDR               (7'h68      ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       )
+)U_CNT_DEL_READ(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
+    .i_addr               (spi_reg_addr                                 ),
+    .i_ff_data            (i_cnt_del_read                               ),
+    .o_rdata              (rdata_cnt_del_read                           ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+//DVDT_WIN_VALUE_EN REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h36      ),
+    .REG_ADDR               (7'h69      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_DVDT_WIN_VALUE_EN(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_dvdt_win_value_en                      ),
+    .o_reg_data           (reg_dvdt_win_value_en                        ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_dvdt_win_value_en = reg_dvdt_win_value_en;
+
+//PRESET_DELAY REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h00      ),
+    .REG_ADDR               (7'h6A      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_PRESET_DELAY(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_preset_delay                           ),
+    .o_reg_data           (reg_preset_delay                             ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_preset_delay = reg_preset_delay;
+
+//DRIVE_DELAY_SET REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h55      ),
+    .REG_ADDR               (7'h6B      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_DRIVE_DELAY_SET(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_drive_delay_set                        ),
+    .o_reg_data           (reg_drive_delay_set                          ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_drive_delay_set = reg_drive_delay_set;
+
+//CMP_DEL REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'hAA      ),
+    .REG_ADDR               (7'h6C      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_CMP_DEL(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_cmp_del                                ),
+    .o_reg_data           (reg_cmp_del                                  ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_cmp_del = reg_cmp_del;
+
+//TEST_MUX REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h00      ),
+    .REG_ADDR               (7'h6D      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_TEST_MUX(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_test_mux                               ),
+    .o_reg_data           (reg_test_mux                                 ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_test_mux = reg_test_mux;
+
+//CMP_ADJ_VREG REGISTER 
+rw_reg #(
+    .DW                     (REG_DW     ),
+    .AW                     (REG_AW     ),
+    .CRC_W                  (REG_CRC_W  ),
+    .DEFAULT_VAL            (8'h02      ),
+    .REG_ADDR               (7'h6E      ),
+    .SUPPORT_TEST_MODE_WR   (1'b1       ),
+    .SUPPORT_TEST_MODE_RD   (1'b1       ),
+    .SUPPORT_CFG_MODE_WR    (1'b0       ),
+    .SUPPORT_CFG_MODE_RD    (1'b0       ),
+    .SUPPORT_SPI_EN_WR      (1'b0       ),
+    .SUPPORT_SPI_EN_RD      (1'b0       ),
+    .SUPPORT_EFUSE_WR       (1'b0       )
+)U_CMP_ADJ_VREG(
+    .i_ren                (spi_reg_ren                                  ),
+    .i_wen                (spi_reg_wen                                  ),
+    .i_test_st_reg_en     (i_test_st_reg_en                             ),
+    .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
+    .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),
+    .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
+    .i_addr               (spi_reg_addr                                 ),
+    .i_wdata              (spi_reg_wdata                                ),
+    .i_crc_data           (spi_reg_wcrc                                 ),
+    .o_rdata              (rdata_cmp_adj_vreg                           ),
+    .o_reg_data           (reg_cmp_adj_vreg                             ),
+    .o_rcrc               (                                             ),
+    .i_clk                (i_clk                                        ),
+    .i_rst_n              (rst_n                                        )
+);
+
+assign o_reg_cmp_adj_vreg = reg_cmp_adj_vreg;
+
+
 assign spi_reg_ren   = i_spi_reg_ren    ;
 assign spi_reg_wen   = i_spi_reg_wen    ;
 assign spi_reg_addr  = i_spi_reg_addr   ;
@@ -1138,11 +1755,15 @@ assign reg_spi_rdata = com_reg_rdata | rdata_die2_efuse_config | rdata_die2_efus
                        rdata_iso_demo_trim | rdata_iso_test_sw | rdata_iso_osc_jit |
                        rdata_ana_reserved_reg | rdata_config1_dr_src_snk_both | rdata_config2_dr_src_sel | rdata_config3_dri_snk_sel |
                        rdata_config4_tltoff_sel1 | rdata_config5_tltoff_sel2 | rdata_config6_desat_sel1 | rdata_config7_desat_sel2 |
-                       rdata_config8_oc_sel | rdata_config9_sc_sel;
+                       rdata_config8_oc_sel | rdata_config9_sc_sel | rdata_config10_dvdt_ref_src | rdata_config11_dvdt_ref_sink  | 
+                       rdata_config12_adc_en | rdata_bgr_code_drv | rdata_cap_trim_code | rdata_csdel_cmp | rdata_dvdt_value_adj |
+                       rdata_adc_adj1 | rdata_adc_adj2 | rdata_ibias_code_drv | rdata_dvdt_tm | rdata_cnt_del_read | rdata_dvdt_win_value_en |
+                       rdata_preset_delay | rdata_drive_delay_set | rdata_cmp_del | rdata_test_mux | rdata_cmp_adj_vreg;
 
 assign reg_spi_rcrc = com_reg_rcrc | rcrc_config1_dr_src_snk_both | rcrc_config2_dr_src_sel | rcrc_config3_dri_snk_sel |
                       rcrc_config4_tltoff_sel1 | rcrc_config5_tltoff_sel2 | rcrc_config6_desat_sel1 | rcrc_config7_desat_sel2 |
-                      rcrc_config8_oc_sel | rcrc_config9_sc_sel;
+                      rcrc_config8_oc_sel | rcrc_config9_sc_sel | rcrc_config10_dvdt_ref_src | rcrc_config11_dvdt_ref_sink |
+                      rcrc_config12_adc_en;
 
 always_ff@(posedge i_clk or negedge rst_n) begin
     if(~rst_n) begin
@@ -1153,6 +1774,15 @@ always_ff@(posedge i_clk or negedge rst_n) begin
     end
 end
 
+always_ff@(posedge i_clk or negedge rst_n) begin
+    if(~rst_n) begin
+        o_reg_spi_rcrc <= {REG_CRC_W{1'b0}};
+    end
+    else begin
+        o_reg_spi_rcrc <= spi_reg_ren ? reg_spi_rcrc : o_reg_spi_rcrc;
+    end
+end
+
 // synopsys translate_off    
 //==================================
 //assertion
@@ -1160,6 +1790,10 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
 
 
 
