@@ -255,7 +255,7 @@ hv_owt_rx_ctrl U_HV_OWT_RX_CTRL(
     .i_rst_n                    (i_rst_n                            )
 );
    
-lv_reg_access_ctrl U_LV_REG_ACCESS_CTRL(
+hv_reg_access_ctrl U_HV_REG_ACCESS_CTRL(
     .i_wdg_scan_rac_rd_req      (wdg_scan_rac_rd_req                ),
     .i_wdg_scan_rac_addr        (wdg_scan_rac_addr                  ),
     .o_rac_wdg_scan_ack         (rac_wdg_scan_ack                   ),
@@ -305,7 +305,7 @@ lv_owt_tx_ctrl U_LV_OWT_TX_CTRL(
     .i_rac_owt_tx_addr          (rac_owt_tx_addr                    ),
     .i_rac_owt_tx_data          (rac_owt_tx_data                    ),
     .o_lv_hv_owt_tx             (o_hv_lv_owt_tx                     ),
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
    
@@ -580,6 +580,10 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     //    
     // synopsys translate_on    
     endmodule
+    
+
+    
+
     
 
     
