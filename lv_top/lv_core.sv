@@ -221,7 +221,7 @@ spi_slv U_SPI_SLV(
 
     .o_spi_err                  (spi_reg_slv_err                    ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -283,7 +283,7 @@ lv_owt_tx_ctrl U_LV_OWT_TX_CTRL(
 
     .o_owt_tx_cmd_lock          (owt_tx_cmd_lock                    ),
     
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -304,7 +304,7 @@ lv_owt_rx_ctrl U_LV_OWT_RX_CTRL(
 
     .i_owt_tx_cmd_lock          (owt_tx_cmd_lock                    ),        
     
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -337,7 +337,7 @@ lv_wdg_ctrl U_LV_WDG_CTRL(
     .i_wdgrefresh_config        (reg_com_config2.wdgrefresh_config  ),
     .i_wdgcrc_config            (reg_com_config2.wdgcrc_config      ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -361,7 +361,7 @@ lv_hv_shadow_reg U_LV_HV_SHADOW_REG(
     .o_hv_reg_vld               (hv_reg_vld                         ),
     .o_hv_ang_reg_data          (hv_ang_reg_data                    ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -373,7 +373,7 @@ lv_analog_int_proc U_LV_ANALOG_INT_PROC(
     .o_lv_pwm_mmerr             (lv_pwm_mmerr                           ),
     .o_lv_pwm_dterr             (lv_pwm_dterr                           ),
 
-    .i_clk	                    (i_clk                                  ),
+    .i_clk                      (i_clk                                  ),
     .i_rst_n                    (i_rst_n                                )
 );
 
@@ -507,7 +507,7 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     
     .o_lv_ctrl_cur_st           (lv_ctrl_cur_st                     ),
 
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -515,7 +515,7 @@ lv_pwm_intb_decode U_LV_PWM_INTB_DECODE(
     .i_hv_pwm_intb_n            (i_hv_pwm_intb_n                    ),
     .o_lv_pwm_gwave             (                                   ),
     .o_hv_intb_n                (hv_intb_n                          ),
-    .i_clk	                    (i_clk                              ),
+    .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
 
@@ -560,6 +560,13 @@ lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
 
 
 
