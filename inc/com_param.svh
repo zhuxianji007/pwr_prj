@@ -48,7 +48,22 @@ parameter OWT_COM_MAX_ERR_NUM                         = 512                     
 parameter OWT_COM_ERR_CNT_W                           = $clog2(OWT_COM_MAX_ERR_NUM+1)    ,
 parameter INIT_OWT_COM_ERR_NUM                        = OWT_COM_ERR_CNT_W'(32)           ,
 
+parameter CTRL_FSM_ST_NUM           = 9                                                  ,
+parameter CTRL_FSM_ST_W             = CTRL_FSM_ST_NUM ? 1 : $clog2(CTRL_FSM_ST_NUM)      ,
 
+parameter PWR_DWN_ST                = CTRL_FSM_ST_W'(0)                                  ,
+parameter WAIT_ST                   = CTRL_FSM_ST_W'(1)                                  ,
+parameter TEST_ST                   = CTRL_FSM_ST_W'(2)                                  ,
+parameter NML_ST                    = CTRL_FSM_ST_W'(3)                                  ,
+parameter FAILSAFE_ST               = CTRL_FSM_ST_W'(4)                                  ,
+parameter FSISO_ST                  = CTRL_FSM_ST_W'(4)                                  ,
+parameter FAULT_ST                  = CTRL_FSM_ST_W'(5)                                  ,
+parameter CFG_ST                    = CTRL_FSM_ST_W'(6)                                  ,
+parameter RST_ST                    = CTRL_FSM_ST_W'(7)                                  ,
+parameter BIST_ST                   = CTRL_FSM_ST_W'(8)                                  ,
+
+parameter RD_OP    = 1'b0; //OP==OPERATION
+parameter WR_OP    = 1'b1; 
 
 
 
