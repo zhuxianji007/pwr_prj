@@ -170,6 +170,7 @@ logic [REG_DW-1:             0]                     reg_hv_bist2            ;
 logic                                               hv_reg_vld              ;
 logic [REG_DW-1:             0]                     hv_ang_reg_data         ;
 
+logic                                               efuse_op_finish         ;
 logic                                               efuse_reg_update        ;
 logic [EFUSE_DATA_NUM-1:     0][EFUSE_DW-1: 0]      efuse_reg_data          ;
 
@@ -418,6 +419,7 @@ lv_reg_slv U_LV_REG_SLV(
     .i_hv_bist1                 (reg_hv_bist1                       ),
     .i_hv_bist2                 (reg_hv_bist2                       ),
 
+    .i_efuse_op_finish          (efuse_op_finish                    ),
     .i_efuse_reg_update         (efuse_reg_update                   ),
     .i_efuse_reg_data           (efuse_reg_data                     ),
 
@@ -458,7 +460,7 @@ assign o_adc2_data  = reg_hv_adc2_data[9: 2]    ;
 assign o_rtmon      = reg_com_config1.rtmon     ;
 
 lv_ctrl_unit U_LV_CTRL_UNIT(
-    .i_pwr_on                   (i_rst_n                            ),
+    .i_pwr_on                   (1'b1                               ),
     .i_io_test_mode             (i_io_test_mode                     ),
     .i_reg_efuse_vld            (o_reg_iso_reserved_reg.efuse_vld   ),
     .i_reg_efuse_done           (reg_mode.efuse_done                ),//soft lanch, make test_st -> wait_st
@@ -491,6 +493,7 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     .o_cfg_st_reg_en            (cfg_st_reg_en                      ),//when in cfg_st support reg read & write.
     .o_test_st_reg_en           (test_st_reg_en                     ),//when in test_st support reg read & write.
     .o_spi_ctrl_reg_en          (spi_ctrl_reg_en                    ),//when spi enable support reg read & write.
+    .o_efuse_ctrl_reg_en        (efuse_ctrl_reg_en                  ),
     .o_bist_en                  (bist_en                            ),
     .o_fsm_ang_test_en          (o_fsm_ang_test_en                  ),//ctrl analog mdl into test mode.
     .o_aout_wait                (o_aout_wait                        ),

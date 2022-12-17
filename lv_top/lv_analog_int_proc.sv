@@ -25,11 +25,11 @@ module lv_analog_int_proc #(
 //==================================
 //local param delcaration
 //==================================
-localparam GATE_BACK_100NS_CYC_NUM   = ( 100*CLK_M+999)/1000 ;
-localparam GATE_BACK_200NS_CYC_NUM   = ( 200*CLK_M+999)/1000 ;
-localparam GATE_BACK_400NS_CYC_NUM   = ( 400*CLK_M+999)/1000 ;
-localparam GATE_BACK_600NS_CYC_NUM   = ( 600*CLK_M+999)/1000 ;
-localparam GATE_BACK_800NS_CYC_NUM   = ( 800*CLK_M+999)/1000 ;
+localparam  GATE_BACK_100NS_CYC_NUM  = ( 100*CLK_M+999)/1000 ;// +999, for ceil to an integer. 
+localparam  GATE_BACK_200NS_CYC_NUM  = ( 200*CLK_M+999)/1000 ;
+localparam  GATE_BACK_400NS_CYC_NUM  = ( 400*CLK_M+999)/1000 ;
+localparam  GATE_BACK_600NS_CYC_NUM  = ( 600*CLK_M+999)/1000 ;
+localparam  GATE_BACK_800NS_CYC_NUM  = ( 800*CLK_M+999)/1000 ;
 localparam GATE_BACK_1000NS_CYC_NUM  = (1000*CLK_M+999)/1000 ;
 localparam GATE_BACK_1200NS_CYC_NUM  = (1200*CLK_M+999)/1000 ;
 localparam GATE_BACK_1400NS_CYC_NUM  = (1400*CLK_M+999)/1000 ;

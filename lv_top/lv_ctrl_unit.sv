@@ -45,6 +45,7 @@ module lv_ctrl_unit #(
     output logic                            o_cfg_st_reg_en     ,//when in cfg_st support reg read & write.
     output logic                            o_test_st_reg_en    ,//when in test_st support reg read & write.
     output logic                            o_spi_ctrl_reg_en   ,//when spi enable support reg read & write.
+    output logic                            o_efuse_ctrl_reg_en ,//support load efuse data to reg.
     output logic                            o_bist_en           ,
     output logic                            o_fsm_ang_test_en   ,//ctrl analog mdl into test mode.
     output logic                            o_aout_wait         ,
@@ -139,6 +140,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 end
 
 always_comb begin
+    lv_ctrl_nxt_st = lv_ctrl_cur_st;
     case(lv_ctrl_cur_st)
         PWR_DWN_ST : begin 
             if(i_pwr_on) begin
@@ -315,7 +317,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_owt_com_en <= 1'b0;
     end
-    else if((lv_ctrl_nxt_st==WAIT_ST) || (lv_ctrl_nxt_st==TEST_ST) || (lv_ctrl_nxt_st==TEST_ST) ||
+    else if((lv_ctrl_nxt_st==WAIT_ST) || (lv_ctrl_nxt_st==TEST_ST) || (lv_ctrl_nxt_st==NML_ST) ||
             (lv_ctrl_nxt_st==FAILSAFE_ST) || (lv_ctrl_nxt_st==FAULT_ST) || (lv_ctrl_nxt_st==CFG_ST) ||
             (lv_ctrl_nxt_st==RST_ST) || (lv_ctrl_nxt_st==BIST_ST)) begin
         o_owt_com_en <= 1'b1;
@@ -349,6 +351,18 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else begin
         o_test_st_reg_en  <= 1'b0;
         o_fsm_ang_test_en <= 1'b0;
+    end
+end
+
+always_ff@(posedge i_clk or negedge i_rst_n) begin
+    if(~i_rst_n) begin
+        o_efuse_ctrl_reg_en  <= 1'b0;
+    end
+    else if((lv_ctrl_nxt_st==WAIT_ST) || (lv_ctrl_nxt_st==TEST_ST)) begin
+        o_efuse_ctrl_reg_en  <= 1'b1;
+    end
+    else begin
+        o_efuse_ctrl_reg_en  <= 1'b0;
     end
 end
 
@@ -416,73 +430,3 @@ end
 `endif
 // synopsys translate_on    
 endmodule
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

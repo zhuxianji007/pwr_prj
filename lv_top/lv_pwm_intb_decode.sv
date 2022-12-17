@@ -74,6 +74,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 end
 
 always_comb begin
+    lv_pwm_intb_nxt_st = lv_pwm_intb_cur_st;
     case(lv_pwm_intb_cur_st)
         PWM_INTB_FSM_IDLE_ST : begin
             if(bit_detect_out_vld) begin
