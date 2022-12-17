@@ -31,7 +31,7 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     input  logic                                        i_hv_scp_flt                    ,
 
     input  logic                                        i_vrtmon                        ,
-    input  logic                                        i_io_fsifo                      ,
+    input  logic                                        i_io_fsiso                      ,
     input  logic                                        i_io_pwma                       ,
     input  logic                                        i_io_pwm                        ,
     input  logic                                        i_io_fsstate                    ,
@@ -57,6 +57,8 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     output str_reg_iso_demo_trim                        o_reg_iso_demo_trim             ,
     output str_reg_iso_test_sw                          o_reg_iso_test_sw               ,
     output str_reg_iso_osc_jit                          o_reg_iso_osc_jit               ,
+    output logic [REG_DW-1:      0]                     o_reg_ana_reserved_reg          ,
+    output logic [REG_DW-1:      0]                     o_reg_ana_reserved_reg2         ,
     output str_reg_config1_dr_src_snk_both              o_reg_config1_dr_src_snk_both   ,
     output str_reg_config2_dr_src_sel                   o_reg_config2_dr_src_sel        ,
     output str_reg_config3_dri_snk_sel                  o_reg_config3_dri_snk_sel       ,
@@ -76,7 +78,7 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     output str_reg_adc_adj1                             o_reg_adc_adj1                  , 
     output str_reg_adc_adj2                             o_reg_adc_adj2                  , 
     output str_reg_ibias_code_drv                       o_reg_ibias_code_drv            ,
-    output str_reg_dvdt_tm                              o_reg_dvdt_tm                   , 
+    output str_reg_dvdt_tm                              o_reg_dvdt_tm                   ,  
     output str_reg_dvdt_win_value_en                    o_reg_dvdt_win_value_en         , 
     output str_reg_preset_delay                         o_reg_preset_delay              , 
     output str_reg_drive_delay_set                      o_reg_drive_delay_set           ,
@@ -159,10 +161,7 @@ logic                                               scan_reg_bist_err       ;
 logic                                               wdg_owt_en              ;
 logic                                               wdg_owt_tx_adc_req      ;
 logic                                               owt_tx_wdg_adc_ack      ;
-    
-logic                                               fsm_wdg_owt_tx_req      ;
-logic                                               bist_wdg_owt_tx_req     ;
-    
+        
 logic                                               wdg_owt_reg_slv_tmoerr  ;//timeout_err
 str_reg_com_config2                                 reg_com_config2         ;
     
@@ -376,7 +375,7 @@ assign hv_status1 = {hv_bist_fail, 1'b0, 1'b0, 1'b0,
 assign hv_status2 = {hv_scp_err, hv_desat_err, hv_oc_err, hv_ot_err,
                      hv_vcc_overr, hv_vcc_uverr, 1'b0, 1'b0};
     
-assign hv_status3 = {i_vrtmon,     i_io_fsifo,   i_io_pwma, i_io_pwm,
+assign hv_status3 = {i_vrtmon,     i_io_fsiso,   i_io_pwma, i_io_pwm,
                      i_io_fsstate, i_io_fsenb_n, i_io_intb, i_io_inta};
     
 assign hv_status4 = {hv_ctrl_cur_st, 4'b0};   
@@ -423,6 +422,8 @@ hv_reg_slv U_HV_REG_SLV(
     .o_reg_iso_demo_trim            (o_reg_iso_demo_trim                ),
     .o_reg_iso_test_sw              (o_reg_iso_test_sw                  ),
     .o_reg_iso_osc_jit              (o_reg_iso_osc_jit                  ),
+    .o_reg_ana_reserved_reg         (o_reg_ana_reserved_reg             ),
+    .o_reg_ana_reserved_reg2        (o_reg_ana_reserved_reg2            ),
     .o_reg_config1_dr_src_snk_both  (o_reg_config1_dr_src_snk_both      ),
     .o_reg_config2_dr_src_sel       (o_reg_config2_dr_src_sel           ),
     .o_reg_config3_dri_snk_sel      (o_reg_config3_dri_snk_sel          ),
@@ -461,19 +462,17 @@ hv_reg_slv U_HV_REG_SLV(
 );
         
 lv_ctrl_unit U_LV_CTRL_UNIT(
-    .i_pwr_on                   (i_pwr_on                           ),
+    .i_pwr_on                   (1'b1                               ),
     .i_io_test_mode             (i_io_test_mode                     ),
     .i_reg_efuse_vld            (o_reg_iso_reserved_reg.efuse_vld   ),
     .i_reg_efuse_done           (reg_mode.efuse_done                ),//soft lanch, make test_st -> wait_st
-    .i_io_fsenb_n               (i_io_fsenb_n                       ),
+    .i_io_fsiso                 (i_io_fsiso                         ),
+    .i_fsiso_en                 (reg_mode.fsifo_en                  ),
     .i_reg_spi_err              (reg_status1[0]                     ),
     .i_reg_scan_crc_err         (reg_status1[1]                     ),    
     .i_reg_owt_com_err          (reg_status1[2]                     ),
     .i_reg_wdg_tmo_err          (reg_status1[3]                     ),//tmo = timeout
-    .i_reg_lv_pwm_dterr         (reg_status1[4]                     ),
-    .i_reg_lv_pwm_mmerr         (reg_status1[5]                     ),
-    .i_reg_lv_vsup_uverr        (reg_status2[0]                     ),
-    .i_reg_lv_vsup_overr        (reg_status2[1]                     ),
+    .i_bist_fail_n              (reg_status1[7]                     ),
     .i_reg_hv_vcc_uverr         (reg_status2[2]                     ),
     .i_reg_hv_vcc_overr         (reg_status2[3]                     ),
     .i_reg_hv_ot_err            (reg_status2[4]                     ),
@@ -487,7 +486,6 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     .i_reg_rst_en               (reg_mode.reset_en                  ),
 
     .o_pwm_en                   (fsm_dgt_pwm_en                     ),
-    .o_fsc_en                   (fsm_dgt_fsc_en                     ),
     .o_wdg_scan_en              (wdg_scan_en                        ),
     .o_spi_en                   (fsm_spi_slv_en                     ),
     .o_owt_com_en               (wdg_owt_en                         ),
@@ -496,32 +494,30 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     .o_spi_ctrl_reg_en          (spi_ctrl_reg_en                    ),//when spi enable support reg read & write.
     .o_bist_en                  (bist_en                            ),
     .o_fsm_ang_test_en          (o_fsm_ang_test_en                  ),//ctrl analog mdl into test mode.
+    .o_aout_wait                (                                   ),
+    .o_aout_bist                (                                   ),
 
-    .i_hv_intb_n                (hv_intb_n                          ),
     .o_intb_n                   (o_intb_n                           ),
 
     .o_efuse_load_req           (efuse_load_req                     ),
     .i_efuse_load_done          (efuse_load_done                    ), //hardware lanch, indicate efuse have load done.
-    
-    .o_fsm_wdg_owt_tx_req       (fsm_wdg_owt_tx_req                 ),
-    .i_owt_rx_ack               (owt_rx_ack                         ),
-    
-    .o_lv_ctrl_cur_st           (lv_ctrl_cur_st                     ),
+        
+    .o_hv_ctrl_cur_st           (hv_ctrl_cur_st                     ),
 
     .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
+   
+hv_pwm_intb_encode U_HV_PWM_INTB_ENCODE(
+    .i_hv_intb_n                (o_intb_n                           ),
+    .i_hv_pwm_gwave             (                                   ),
+    .i_wdgintb_en               (                                   ),
+    .i_wdgintb_config           (reg_com_config1.wdgintb_config     ),
+    .o_hv_pwm_intb_n            (                                   ),
+    .i_clk	                    (i_clk                              ),
+    .i_rst_n                    (i_rst_n                            )
+);
 
-
-
-    
-    lv_pwm_intb_decode U_LV_PWM_INTB_DECODE(
-        .i_hv_pwm_intb_n            (i_hv_pwm_intb_n                    ),
-        .o_lv_pwm_gwave             (                                   ),
-        .o_hv_intb_n                (hv_intb_n                          ),
-        .i_clk	                    (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
     
     lv_abist U_LV_ABIST(
         .i_bist_en                  (bist_en                            ),     
@@ -556,13 +552,14 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
         .i_clk                      (i_clk                              ),
         .i_rst_n                    (i_rst_n                            )
     );
-    // synopsys translate_off    
-    //==================================
-    //assertion
-    //==================================
-    //    
-    // synopsys translate_on    
-    endmodule
+
+// synopsys translate_off    
+//==================================
+//assertion
+//==================================
+//    
+// synopsys translate_on    
+endmodule
     
 
     

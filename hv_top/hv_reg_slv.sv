@@ -61,6 +61,8 @@ module hv_reg_slv import com_pkg::*; import hv_pkg::*;
     output str_reg_iso_demo_trim                        o_reg_iso_demo_trim             ,
     output str_reg_iso_test_sw                          o_reg_iso_test_sw               ,
     output str_reg_iso_osc_jit                          o_reg_iso_osc_jit               ,
+    output logic [REG_DW-1:      0]                     o_reg_ana_reserved_reg          ,
+    output logic [REG_DW-1:      0]                     o_reg_ana_reserved_reg2         ,
     output str_reg_config1_dr_src_snk_both              o_reg_config1_dr_src_snk_both   ,
     output str_reg_config2_dr_src_sel                   o_reg_config2_dr_src_sel        ,
     output str_reg_config3_dri_snk_sel                  o_reg_config3_dri_snk_sel       ,
@@ -108,6 +110,11 @@ logic [REG_DW-1:    0] spi_reg_wdata                    ;
 logic [REG_CRC_W-1: 0] spi_reg_wcrc                     ;
 logic [REG_DW-1:    0] reg_spi_rdata                    ;
 logic [REG_CRC_W-1: 0] reg_spi_rcrc                     ;
+
+logic [REG_DW-1:    0] reg_status1                      ;
+logic [REG_DW-1:    0] reg_mask1                        ;
+logic [REG_DW-1:    0] reg_status2                      ;
+logic [REG_DW-1:    0] reg_mask2                        ;
 
 logic                  com_reg_wack                     ;
 logic                  com_reg_rack                     ;
@@ -220,6 +227,9 @@ logic [REG_DW-1:    0] reg_test_mux                     ;
 //==================================
 //main code
 //==================================
+assign o_reg_status1 = reg_status1 & ~reg_mask1 ;
+assign o_reg_status2 = reg_status2 & ~reg_mask2 ;
+
 com_reg_bank U_LV_COM_REG_BANK(
     .i_spi_reg_ren                 (spi_reg_ren             ),
     .i_spi_reg_wen                 (spi_reg_wen             ),
@@ -237,10 +247,10 @@ com_reg_bank U_LV_COM_REG_BANK(
     .o_reg_mode                    (o_reg_mode              ),
     .o_reg_com_config1             (o_reg_com_config1       ),
     .o_reg_com_config2             (o_reg_com_config2       ),
-    .o_reg_status1                 (o_reg_status1           ),
-    .o_reg_mask1                   (o_reg_mask1             ),
-    .o_reg_status2                 (o_reg_status2           ),
-    .o_reg_mask2                   (o_reg_mask2             ),
+    .o_reg_status1                 (reg_status1             ),
+    .o_reg_mask1                   (reg_mask1               ),
+    .o_reg_status2                 (reg_status2             ),
+    .o_reg_mask2                   (reg_mask2               ),
 
     .i_test_st_reg_en              (i_test_st_reg_en        ),
     .i_cfg_st_reg_en               (i_cfg_st_reg_en         ),
@@ -817,6 +827,8 @@ rw_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
+assign o_reg_ana_reserved_reg = reg_ana_reserved_reg;
+
 //ANA_RESERVED_REG2 REGISTER
 rww_reg #(
     .DW                     (REG_DW     ),
@@ -848,7 +860,7 @@ rww_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_reg_iso_reserved_reg2 = reg_ana_reserved_reg2;
+assign o_reg_ana_reserved_reg2 = reg_ana_reserved_reg2;
 
 //CONFIG1_DR_SRC_SNK_BOTH REGISTER
 rw_reg #(

@@ -15,7 +15,7 @@ module hv_pwm_intb_encode #(
     input  logic           i_hv_intb_n                      ,
     input  logic           i_hv_pwm_gwave                   ,
     input  logic           i_wdgintb_en                     ,
-    input  logic [1: 0]    i_com_config1_wdgintb_config     ,
+    input  logic [1: 0]    i_wdgintb_config                 ,
     output logic           o_hv_pwm_intb_n                  ,
 
     input  logic           i_clk                            ,
@@ -126,7 +126,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         if(hv_intb_pulse) begin
             wdg_intb_cnt <= WDG_CNT_W'(0);        
         end
-        else if(wdg_intb_cnt==(WDG_INTB_TH[i_com_config1_wdgintb_config]-1)) begin
+        else if(wdg_intb_cnt==(WDG_INTB_TH[i_wdgintb_config]-1)) begin
             wdg_intb_cnt <= WDG_CNT_W'(0);
         end
         else begin
@@ -138,7 +138,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-assign wdg_intb_update  = (wdg_intb_cnt==(WDG_INTB_TH[i_com_config1_wdgintb_config]-1));
+assign wdg_intb_update  = (wdg_intb_cnt==(WDG_INTB_TH[i_wdgintb_config]-1));
 assign wdg_intb0_update = wdg_intb_update & ~i_hv_intb_n;
 assign wdg_intb1_update = wdg_intb_update &  i_hv_intb_n;
 
