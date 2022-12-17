@@ -31,8 +31,7 @@ module lv_owt_tx_ctrl #(
 //==================================
 //local param delcaration
 //==================================
-localparam RD_OP    = 1'b0; //OP==OPERATION
-localparam WR_OP    = 1'b1; 
+
 //==================================
 //var delcaration
 //==================================

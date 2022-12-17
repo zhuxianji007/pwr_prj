@@ -221,7 +221,7 @@ always_comb begin
             else if(i_reg_rst_en) begin
                 lv_ctrl_nxt_st = RST_ST;            
             end
-            else if(~effect_pwm_err & i_reg_cfg_en) begin
+            else if(~effect_pwm_err & ~i_reg_cfg_en) begin
                 lv_ctrl_nxt_st = FAULT_ST;            
             end
             else if(~effect_pwm_err & ~i_reg_cfg_en & i_io_fsenb_n & i_reg_bist_en) begin
