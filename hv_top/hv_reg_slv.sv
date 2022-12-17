@@ -39,6 +39,7 @@ module hv_reg_slv import com_pkg::*; import hv_pkg::*;
 
     input logic [5:                0]                   i_cnt_del_read                  ,
 
+    input logic                                         i_efuse_op_finish               ,
     input logic                                         i_efuse_reg_update              ,
     input logic [EFUSE_DATA_NUM-1: 0][EFUSE_DW-1: 0]    i_efuse_reg_data                ,
 
@@ -284,10 +285,9 @@ rw_reg #(
 assign o_reg_die2_efuse_config = reg_die2_efuse_config;
 
 //DIE2_EFUSE_STATUS REGISTER
-rw_reg #(
+rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h07      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -296,7 +296,7 @@ rw_reg #(
     .SUPPORT_CFG_MODE_RD    (1'b0       ),
     .SUPPORT_SPI_EN_WR      (1'b0       ),
     .SUPPORT_SPI_EN_RD      (1'b0       ),
-    .SUPPORT_EFUSE_WR       (1'b0       )
+    .SUPPORT_EFUSE_WR       (1'b1       )
 )U_DIE2_EFUSE_STATUS(
     .i_ren                (spi_reg_ren                                  ),
     .i_wen                (spi_reg_wen                                  ),
@@ -306,10 +306,10 @@ rw_reg #(
     .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (spi_reg_wdata                                ),
-    .i_crc_data           ({REG_CRC_W{1'b0}}                            ),
     .o_rdata              (rdata_die2_efuse_status                      ),
     .o_reg_data           (reg_die2_efuse_status                        ),
-    .o_rcrc               (                                             ),
+    .i_lgc_wen            (i_efuse_op_finish                            ),
+    .i_lgc_wdata          ({reg_die2_efuse_status[7:1], 1'b1}           ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );

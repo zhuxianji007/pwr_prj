@@ -64,6 +64,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 end
 
 always_comb begin
+    hv_pwm_intb_nxt_st = hv_pwm_intb_cur_st;
     case(hv_pwm_intb_cur_st)
         PWM_INTB_FSM_IDLE_ST : begin
             if(hv_intb1_pulse | wdg_intb1_update) begin

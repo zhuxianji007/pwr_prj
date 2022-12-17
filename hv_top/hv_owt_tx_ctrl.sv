@@ -85,6 +85,7 @@ end
 end
 
 always_comb begin
+    owt_tx_nxt_st = owt_tx_cur_st;
     case(owt_tx_cur_st)
         OWT_IDLE_ST : begin 
             if(owt_tx_start) begin

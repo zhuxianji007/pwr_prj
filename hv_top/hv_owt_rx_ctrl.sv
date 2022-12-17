@@ -77,6 +77,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
 end
 
 always_comb begin
+    owt_rx_nxt_st = owt_rx_cur_st;
     case(owt_rx_cur_st)
         OWT_IDLE_ST : begin 
             if(rx_vld & rx_vld_data) begin
