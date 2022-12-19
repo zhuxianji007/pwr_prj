@@ -163,8 +163,9 @@ logic [REG_DW-1:    0] reg_config0_t_deat_time  ;
 //==================================
 //main code
 //==================================
-assign merge_status1 = i_lv_status1 | i_hv_status1;
-assign merge_status2 = i_lv_status2 | i_hv_status2; 
+assign merge_status1[7: 2] = i_lv_status1[7: 2] | i_hv_status1[7: 2];
+assign merge_status1[1: 0] = i_lv_status1[1: 0] & i_hv_status1[1: 0];
+assign merge_status2       = i_lv_status2 | i_hv_status2; 
 
 assign o_reg_status1 = reg_status1 & ~reg_mask1 ;
 assign o_reg_status2 = reg_status2 & ~reg_mask2 ;

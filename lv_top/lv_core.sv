@@ -125,7 +125,6 @@ logic                                               owt_rx_status           ;//0
 
 logic                                               owt_rx_wdg_rsp          ;
 logic                                               wdg_owt_rx_tmo          ;
-logic [CTRL_FSM_ST_W-1:     0]                      ctrl_unit_cur_fsm_st    ;  
 
 str_reg_com_config1                                 reg_com_config1         ;
 logic                                               owt_rx_reg_slv_owtcomerr;//owt_com_err.
@@ -297,7 +296,7 @@ lv_owt_rx_ctrl U_LV_OWT_RX_CTRL(
 
     .o_owt_rx_wdg_rsp           (owt_rx_wdg_rsp                     ),
     .i_wdg_owt_rx_tmo           (wdg_owt_rx_tmo                     ),//for test_st owt timeout, gen a owt_rx rsp.
-    .i_ctrl_unit_cur_fsm_st     (ctrl_unit_cur_fsm_st               ),                           
+    .i_ctrl_unit_cur_fsm_st     (lv_ctrl_cur_st                     ),                           
 
     .i_reg_comerr_mode          (reg_com_config1.comerr_mode        ),
     .i_reg_comerr_config        (reg_com_config1.comerr_config      ),
@@ -419,8 +418,8 @@ lv_reg_slv U_LV_REG_SLV(
     .i_hv_bist1                 (reg_hv_bist1                       ),
     .i_hv_bist2                 (reg_hv_bist2                       ),
 
-    .i_efuse_op_finish          (efuse_op_finish                    ),
-    .i_efuse_reg_update         (efuse_reg_update                   ),
+    .i_efuse_op_finish          (1'b1                               ),
+    .i_efuse_reg_update         (1'b1                               ),
     .i_efuse_reg_data           (efuse_reg_data                     ),
 
     .o_reg_mode                 (reg_mode                           ),
@@ -503,7 +502,7 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     .o_intb_n                   (o_intb_n                           ),
 
     .o_efuse_load_req           (efuse_load_req                     ),
-    .i_efuse_load_done          (efuse_load_done                    ), //hardware lanch, indicate efuse have load done.
+    .i_efuse_load_done          (1'b0                               ), //hardware lanch, indicate efuse have load done.
     
     .o_fsm_wdg_owt_tx_req       (fsm_wdg_owt_tx_req                 ),
     .i_owt_rx_ack               (owt_rx_ack                         ),

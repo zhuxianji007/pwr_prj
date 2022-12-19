@@ -34,7 +34,7 @@ localparam SCAN_CNT_W           = $clog2(LV_SCAN_REG_NUM+1) ;
 localparam BIST_OWT_TX_NUM      = 4                         ;
 localparam BIST_OWT_TX_CNT_W    = $clog2(BIST_OWT_TX_NUM+1) ;
 localparam BIST_OWT_TX_OK_NUM   = 3                         ;
-localparam BIST_TMO_TH          = 2000*CLK_M                ;
+localparam BIST_TMO_TH          = 20000*CLK_M               ;
 localparam BIST_TMO_CNT_W       = $clog2(BIST_TMO_TH)       ;
 //==================================
 //var delcaration
@@ -52,9 +52,12 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
 	    scan_cnt <= SCAN_CNT_W'(0);
 	end
-  	else if(i_scan_reg_bist_ack) begin
-	    scan_cnt <= (scan_cnt==LV_SCAN_REG_NUM) ? scan_cnt : (scan_cnt+1'b1);
-	end
+    if(i_bist_en) begin
+  	    if(i_scan_reg_bist_ack) begin
+	        scan_cnt <= (scan_cnt==LV_SCAN_REG_NUM) ? scan_cnt : (scan_cnt+1'b1);
+	    end
+        else;
+    end
     else begin
 	    scan_cnt <= SCAN_CNT_W'(0);    
     end
