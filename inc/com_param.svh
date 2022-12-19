@@ -62,8 +62,16 @@ parameter CFG_ST                    = CTRL_FSM_ST_W'(6)                         
 parameter RST_ST                    = CTRL_FSM_ST_W'(7)                                  ,
 parameter BIST_ST                   = CTRL_FSM_ST_W'(8)                                  ,
 
-parameter RD_OP    = 1'b0; //OP==OPERATION
-parameter WR_OP    = 1'b1; 
+parameter RD_OP    = 1'b0, //OP==OPERATION
+parameter WR_OP    = 1'b1, 
+
+
+
+
+
+
+
+
 
 
 
