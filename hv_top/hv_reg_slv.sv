@@ -1536,7 +1536,7 @@ ro_reg #(
     .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
     .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
-    .i_ff_data            (i_cnt_del_read                               ),
+    .i_ff_data            ({3'b0, i_cnt_del_read}                       ),
     .o_rdata              (rdata_cnt_del_read                           ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )

@@ -30,7 +30,7 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     input  logic                                        i_hv_desat_flt                  ,
     input  logic                                        i_hv_scp_flt                    ,
 
-    input  logic                                        i_vrtmon                        ,
+    input  logic                                        i_vge_vce                       ,
     input  logic                                        i_io_fsiso                      ,
     input  logic                                        i_io_pwma                       ,
     input  logic                                        i_io_pwm                        ,
@@ -39,14 +39,28 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     input  logic                                        i_io_intb                       ,
     input  logic                                        i_io_inta                       ,
 
-    input logic [5:                0]                   i_cnt_del_read                  ,
+    output logic 		                                o_bist_hv_ov                    ,
+    output logic 		                                o_bist_hv_ot                    ,
+    output logic 		                                o_bist_hv_opscod                ,
+    output logic 		                                o_bist_hv_oc                    ,
+    output logic 		                                o_bist_hv_sc                    ,
+    output logic 		                                o_bist_hv_adc                   ,
+
+    input  logic [3:    0]                              i_off_vbn_read                  ,
+    input  logic [3:    0]                              i_on_vbn_read                   ,
+    input  logic [5:    0]                              i_cnt_del_read                  ,
+
+    input  logic [9:    0]                              i_adc_data1                     ,
+    input  logic [9:    0]                              i_adc_data2                     ,
+    input  logic                                        i_adc_ready1                    ,
+    input  logic                                        i_adc_ready2                    ,
 
     input  logic                                        i_ang_dgt_pwm_wv                , //analog pwm ctrl to digtial pwm ctrl pwm wave
     input  logic                                        i_ang_dgt_pwm_fs                ,
 
     output logic                                        o_dgt_ang_pwm_en                ,
     output logic                                        o_dgt_ang_fsc_en                ,
-    output logic                                        o_io_pwm_l2h                    ,
+    output logic                                        o_pwmn_intb                     ,
   
     output str_reg_iso_bgr_trim                         o_reg_iso_bgr_trim              ,
     output str_reg_iso_con_ibias_trim                   o_reg_iso_con_ibias_trim        ,
@@ -85,8 +99,6 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     output str_reg_cmp_del                              o_reg_cmp_del                   ,
     output str_reg_test_mux                             o_reg_test_mux                  , 
     output str_reg_cmp_adj_vreg                         o_reg_cmp_adj_vreg              ,
-
-    output logic                                        o_intb_n                        ,
 
     input  logic                                        i_clk                           ,
     input  logic                                        i_rst_n
@@ -192,7 +204,7 @@ logic                                               cfg_st_reg_en           ;
 logic                                               spi_ctrl_reg_en         ;
 logic                                               efuse_ctrl_reg_en       ;
     
-logic [CTRL_FSM_ST_W-1:      0]                     lv_ctrl_cur_st          ;
+logic [CTRL_FSM_ST_W-1:      0]                     hv_ctrl_cur_st          ;
     
 logic                                               fsm_dgt_pwm_en          ;
 logic                                               fsm_dgt_fsc_en          ;
@@ -213,7 +225,7 @@ logic                                               owt_rx_rac_status       ;
 logic                                               rac_owt_tx_wr_cmd_vld   ;
 logic                                               rac_owt_tx_rd_cmd_vld   ;
 logic [REG_AW-1:             0]                     rac_owt_tx_addr         ;
-logic [OWT_ADCD_BIT_NUM-1:             0]           rac_owt_tx_data         ;   
+logic [OWT_ADCD_BIT_NUM-1:   0]                     rac_owt_tx_data         ;   
 
 str_reg_mode                                        reg_mode                ;
 str_reg_com_config1                                 reg_com_config1         ;
@@ -221,7 +233,13 @@ str_reg_com_config2                                 reg_com_config2         ;
 str_reg_status1                                     reg_status1             ;
 str_reg_status2                                     reg_status2             ;
 str_reg_efuse_config                                reg_die2_efuse_config   ;
-output str_reg_efuse_status                         reg_die2_efuse_status   ;
+str_reg_efuse_status                                reg_die2_efuse_status   ;
+
+logic [ADC_DW-1:            0]                      adc1_data               ;
+logic [ADC_DW-1:            0]                      adc2_data               ;
+
+logic                                               intb_n                  ;
+logic                                               vrtmon                  ;
 //==================================        
 //main code
 //==================================
@@ -297,8 +315,8 @@ hv_reg_access_ctrl U_HV_REG_ACCESS_CTRL(
     .o_rac_owt_tx_addr          (rac_owt_tx_addr                    ),
     .o_rac_owt_tx_data          (rac_owt_tx_data                    ),
 
-    .i_adc1_data                (                                   ),
-    .i_adc2_data                (                                   ),
+    .i_adc1_data                (adc1_data                          ),
+    .i_adc2_data                (adc2_data                          ),
 
     .o_rac_reg_ren              (rac_reg_ren                        ),
     .o_rac_reg_wen              (rac_reg_wen                        ),
@@ -374,8 +392,10 @@ assign hv_status1 = {hv_bist_fail, 1'b0, 1'b0, 1'b0,
     
 assign hv_status2 = {hv_scp_err, hv_desat_err, hv_oc_err, hv_ot_err,
                      hv_vcc_overr, hv_vcc_uverr, 1'b0, 1'b0};
-    
-assign hv_status3 = {i_vrtmon,     i_io_fsiso,   i_io_pwma, i_io_pwm,
+
+assign vrtmon = reg_com_config1.rtmon ? ~i_vge_vce : i_vge_vce;                 
+                     
+assign hv_status3 = {vrtmon,       i_io_fsiso,   i_io_pwma, i_io_pwm,
                      i_io_fsstate, i_io_fsenb_n, i_io_intb, i_io_inta};
     
 assign hv_status4 = {hv_ctrl_cur_st, 4'b0};   
@@ -461,7 +481,7 @@ hv_reg_slv U_HV_REG_SLV(
     .o_rst_n                        (                                   )
 );
         
-lv_ctrl_unit U_LV_CTRL_UNIT(
+hv_ctrl_unit U_HV_CTRL_UNIT(
     .i_pwr_on                   (1'b1                               ),
     .i_io_test_mode             (i_io_test_mode                     ),
     .i_reg_efuse_vld            (o_reg_iso_reserved_reg.efuse_vld   ),
@@ -497,7 +517,7 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     .o_aout_wait                (                                   ),
     .o_aout_bist                (                                   ),
 
-    .o_intb_n                   (o_intb_n                           ),
+    .o_intb_n                   (intb_n                             ),
 
     .o_efuse_load_req           (efuse_load_req                     ),
     .i_efuse_load_done          (efuse_load_done                    ), //hardware lanch, indicate efuse have load done.
@@ -509,49 +529,78 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
 );
    
 hv_pwm_intb_encode U_HV_PWM_INTB_ENCODE(
-    .i_hv_intb_n                (o_intb_n                           ),
+    .i_hv_intb_n                (intb_n                             ),
     .i_hv_pwm_gwave             (                                   ),
-    .i_wdgintb_en               (                                   ),
+    .i_wdgintb_en               (1'b1                               ),
     .i_wdgintb_config           (reg_com_config1.wdgintb_config     ),
-    .o_hv_pwm_intb_n            (                                   ),
+    .o_hv_pwm_intb_n            (o_pwmn_intb                        ),
     .i_clk	                    (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
+   
+hv_abist U_HV_ABIST(
+    .i_bist_en                  (bist_en                            ),
 
+    .o_bist_hv_ov               (o_bist_hv_ov                       ),
+    .i_hv_vcc_ov                (i_hv_vcc_ov                        ),
+
+    .o_bist_hv_ot               (o_bist_hv_ot                       ),
+    .i_hv_ot                    (i_hv_ot                            ),
+
+    .o_bist_hv_opscod           (o_bist_hv_opscod                   ),
+    .i_hv_desat_flt             (i_hv_desat_flt                     ),
+
+    .o_bist_hv_oc               (o_bist_hv_oc                       ),
+    .i_hv_oc                    (i_hv_oc                            ),
+
+    .o_bist_hv_sc               (o_bist_hv_sc                       ),
+    .i_hv_scp_flt               (i_hv_scp_flt                       ),
+
+    .o_bist_hv_adc              (o_bist_hv_adc                      ),
+    .i_hv_adc_data1             (adc1_data                          ),
+    .i_hv_adc_data2             (adc2_data                          ),
+
+    .o_bist_hv_ov_status        (                                   ),//1: bist success; 0: bist failure.
+    .o_bist_hv_ot_status        (                                   ),//1: bist success; 0: bist failure.
+    .o_bist_hv_opscod_status    (                                   ),//1: bist success; 0: bist failure.
+    .o_bist_hv_oc_status        (                                   ),//1: bist success; 0: bist failure.
+    .o_bist_hv_sc_status        (                                   ),//1: bist success; 0: bist failure.
+    .o_bist_hv_adc_status       (                                   ),//1: bist success; 0: bist failure.
+
+    .o_lbist_en                 (lbist_en                           ),
+
+    .i_clk                      (i_clk                              ),
+    .i_rst_n                    (i_rst_n                            )
+);
     
-    lv_abist U_LV_ABIST(
-        .i_bist_en                  (bist_en                            ),     
-        .i_bist_lv_ov               (i_bist_lv_ov                       ),
-        .i_lv_vsup_ov               (i_lv_vsup_ov                       ),
-        .o_lbist_en                 (lbist_en                           ),
-        .i_clk                      (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
+hv_lbist U_HV_LBIST(
+    .i_bist_en                  (lbist_en                           ),
+
+    .i_owt_rx_ack               (owt_rx_rac_vld                     ),
+    .i_owt_rx_status            (owt_rx_rac_status                  ),
+
+    .o_bist_scan_reg_req        (bist_scan_reg_req                  ),
+    .i_scan_reg_bist_ack        (scan_reg_bist_ack                  ),
+    .i_scan_reg_bist_err        (scan_reg_bist_err                  ),
+
+    .o_hv_bist_fail             (                                   ),
+
+    .i_clk                      (i_clk                              ),
+    .i_rst_n                    (i_rst_n                            )
+);
     
-    lv_lbist U_LV_LBIST(
-        .i_bist_en                  (lbist_en                           ),
-        .o_bist_wdg_owt_tx_req      (bist_wdg_owt_tx_req                ),
-        .i_owt_rx_ack               (owt_rx_ack                         ),
-        .i_owt_rx_status            (owt_rx_status                      ),
-        .o_bist_scan_reg_req        (bist_scan_reg_req                  ),
-        .i_scan_reg_bist_ack        (scan_reg_bist_ack                  ),
-        .i_scan_reg_bist_err        (scan_reg_bist_err                  ),
-        .o_lv_bist_fail             (hv_bist_fail                       ),
-        .i_clk                      (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
-    
-    lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
-        .i_ang_dgt_pwm_wv           (i_ang_dgt_pwm_wv                   ), //analog pwm ctrl to digtial pwm ctrl pwm wave
-        .i_ang_dgt_pwm_fs           (i_ang_dgt_pwm_fs                   ),
-        .i_fsm_dgt_pwm_en           (fsm_dgt_pwm_en                     ),
-        .i_fsm_dgt_fsc_en           (fsm_dgt_fsc_en                     ),
-        .o_dgt_ang_pwm_en           (o_dgt_ang_pwm_en                   ),
-        .o_dgt_ang_fsc_en           (o_dgt_ang_fsc_en                   ),
-        .o_io_pwm_l2h               (o_io_pwm_l2h                       ),
-        .i_clk                      (i_clk                              ),
-        .i_rst_n                    (i_rst_n                            )
-    );
+hv_adc_sample U_HV_ADC_SAMPLE(
+    .i_ang_dgt_adc1_rdy             (i_adc_ready1                       ), //analog to digtial
+    .i_ang_dgt_adc1_data            (i_adc_data1                        ),
+    .o_adc1_equ_data                (adc_data1                          ),
+
+    .i_ang_dgt_adc2_rdy             (i_adc_ready2                       ), 
+    .i_ang_dgt_adc2_data            (i_adc_data2                        ),
+    .o_adc2_equ_data                (adc_data2                          ),
+
+    .i_clk                          (i_clk                              ),
+    .i_rst_n                        (i_rst_n                            )
+);
 
 // synopsys translate_off    
 //==================================
