@@ -108,19 +108,6 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     else;
 end
 
-always_ff@(posedge i_clk or negedge i_rst_n) begin
-    if(~i_rst_n) begin
-        o_fsm_wdg_owt_tx_req <= 1'b0;
-    end
-    else if(i_owt_rx_ack) begin
-        o_fsm_wdg_owt_tx_req <= 1'b0;
-    end
-    else if(~i_io_test_mode & i_reg_efuse_vld & (hv_ctrl_cur_st==WAIT_ST) & (i_reg_owt_com_err | i_reg_wdg_tmo_err)) begin
-        o_fsm_wdg_owt_tx_req <= 1'b1;
-    end
-    else;
-end
-
 assign o_hv_ctrl_cur_st = hv_ctrl_cur_st;
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -425,3 +412,4 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
