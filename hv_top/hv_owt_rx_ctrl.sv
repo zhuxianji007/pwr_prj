@@ -348,9 +348,9 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
 end
 
-assign owt_rx_status = (((owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_cur_st != OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
-                        (((rx_sync_tail_bit != 4'b1100) & (owt_rx_cur_st == OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
-                        (crc8_chk_o_crc != rx_crc_data) | (i_owt_tx_cmd_lock != rx_cmd_data);
+assign owt_rx_status =  (((owt_rx_cur_st != OWT_IDLE_ST) & (owt_rx_cur_st != OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
+                        (((rx_sync_tail_bit != 4'b1100 ) & (owt_rx_cur_st == OWT_END_TAIL_ST)) & (owt_rx_nxt_st==OWT_IDLE_ST)) |
+                        (crc8_chk_o_crc != rx_crc_data);
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
@@ -416,5 +416,8 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
 
 
