@@ -59,7 +59,7 @@ module hv_core import com_pkg::*; import hv_pkg::*;
     input  logic                                        i_ang_dgt_pwm_fs                ,
 
     output logic                                        o_dgt_ang_pwm_en                ,
-    output logic                                        o_dgt_ang_fsc_en                ,
+    output logic                                        o_dgt_ang_fsiso_en              ,
     output logic                                        o_pwmn_intb                     ,
   
     output str_reg_iso_bgr_trim                         o_reg_iso_bgr_trim              ,
@@ -193,8 +193,6 @@ logic                                               efuse_ctrl_reg_en       ;
     
 logic [CTRL_FSM_ST_W-1:      0]                     hv_ctrl_cur_st          ;
     
-logic                                               fsm_dgt_pwm_en          ;
-logic                                               fsm_dgt_fsc_en          ;
 logic                                               bist_en                 ;
     
 logic                                               efuse_load_req          ;
@@ -492,7 +490,8 @@ hv_ctrl_unit U_HV_CTRL_UNIT(
     .i_reg_bist_en              (reg_mode.bist_en                   ),
     .i_reg_rst_en               (reg_mode.reset_en                  ),
 
-    .o_pwm_en                   (fsm_dgt_pwm_en                     ),
+    .o_pwm_en                   (o_dgt_ang_pwm_en                   ),
+    .o_fsiso_en                 (o_dgt_ang_fsiso_en                 ),
     .o_wdg_scan_en              (wdg_scan_en                        ),
     .o_spi_en                   (fsm_spi_slv_en                     ),
     .o_owt_com_en               (wdg_owt_en                         ),
@@ -597,6 +596,11 @@ hv_adc_sample U_HV_ADC_SAMPLE(
 //    
 // synopsys translate_on    
 endmodule
+    
+
+
+
+
     
 
 
