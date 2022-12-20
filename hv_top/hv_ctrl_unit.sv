@@ -36,6 +36,7 @@ module hv_ctrl_unit #(
     input  logic                            i_reg_rst_en        ,
 
     output logic                            o_pwm_en            ,
+    output logic                            o_fsiso_en          ,
     output logic                            o_wdg_scan_en       ,
     output logic                            o_spi_en            ,
     output logic                            o_owt_com_en        ,
@@ -80,6 +81,8 @@ logic                               fsiso_en            ;
 //==================================
 assign fsifo_en = i_io_fsiso & i_fsiso_en;
 
+assign o_fsiso_en = i_fsiso_en;
+
 assign hv_err0 = i_reg_hv_vcc_uverr | i_reg_hv_vcc_overr | i_reg_hv_ot_err |
                  i_reg_hv_oc_err    | i_reg_hv_desat_err | i_reg_hv_scp_err;
     
@@ -90,9 +93,9 @@ assign hv_err2 = i_reg_hv_oc_err;
 
 assign effect_pwm_err = hv_err1 | i_reg_owt_com_err | i_reg_wdg_tmo_err;
 
-assign fault_st_pwm_en = (hv_ctrl_cur_st==FAULT_ST) & ~effect_pwm_err;
+assign fault_st_pwm_en = (hv_ctrl_nxt_st==FAULT_ST) & ~effect_pwm_err;
 
-assign cfg_st_intb_n_en = (hv_ctrl_cur_st==CFG_ST) & (i_reg_owt_com_err | i_reg_wdg_tmo_err | 
+assign cfg_st_intb_n_en = (hv_ctrl_nxt_st==CFG_ST) & (i_reg_owt_com_err | i_reg_wdg_tmo_err | 
                            i_reg_spi_err | i_reg_scan_crc_err | hv_err0 | ~i_bist_fail_n);                         
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -412,4 +415,6 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
 
