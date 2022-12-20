@@ -152,15 +152,9 @@ logic                                               owt_wdg_adc_ack         ;
     
 logic [OWT_CMD_BIT_NUM-1:   0]                      owt_tx_cmd_lock         ;
     
-logic                                               owt_rx_rac_vld          ;
-logic [OWT_CMD_BIT_NUM-1:   0]                      owt_rx_rac_cmd          ;
-logic [OWT_DATA_BIT_NUM-1:  0]                      owt_rx_rac_data         ;
-logic                                               owt_rx_rac_status       ;//0: normal; 1: error. 
-    
 logic                                               owt_rx_rst_wdg_owt      ;
 logic                                               wdg_owt_rx_tmo          ;  
     
-str_reg_com_config1                                 reg_com_config1         ;
 logic                                               owt_rx_reg_slv_owtcomerr;//owt_com_err.
     
 logic                                               wdg_scan_en             ;
@@ -175,7 +169,6 @@ logic                                               wdg_owt_tx_adc_req      ;
 logic                                               owt_tx_wdg_adc_ack      ;
         
 logic                                               wdg_owt_reg_slv_tmoerr  ;//timeout_err
-str_reg_com_config2                                 reg_com_config2         ;
     
 logic                                               hv_vcc_uverr            ;
 logic                                               hv_vcc_overr            ;
@@ -192,13 +185,7 @@ logic [REG_DW-1:             0]                     hv_status4              ;
 logic                                               efuse_op_finish         ;            
 logic                                               efuse_reg_update        ;
 logic [EFUSE_DATA_NUM-1:     0][EFUSE_DW-1: 0]      efuse_reg_data          ;
-    
-str_reg_mode                                        reg_mode                ;
-str_reg_status1                                     reg_status1             ;
-str_reg_status2                                     reg_status2             ;
-str_reg_efuse_config                                reg_die1_efuse_config   ;
-str_reg_efuse_status                                reg_die1_efuse_status   ;
-    
+        
 logic                                               test_st_reg_en          ;
 logic                                               cfg_st_reg_en           ;
 logic                                               spi_ctrl_reg_en         ;
@@ -235,8 +222,8 @@ str_reg_status2                                     reg_status2             ;
 str_reg_efuse_config                                reg_die2_efuse_config   ;
 str_reg_efuse_status                                reg_die2_efuse_status   ;
 
-logic [ADC_DW-1:            0]                      adc1_data               ;
-logic [ADC_DW-1:            0]                      adc2_data               ;
+logic [ADC_DW-1:            0]                      adc_data1               ;
+logic [ADC_DW-1:            0]                      adc_data2               ;
 
 logic                                               intb_n                  ;
 logic                                               vrtmon                  ;
@@ -273,8 +260,8 @@ hv_owt_rx_ctrl U_HV_OWT_RX_CTRL(
     .o_owt_rx_rac_vld           (owt_rx_rac_vld                     ),
     .o_owt_rx_rac_cmd           (owt_rx_rac_cmd                     ),
     .o_owt_rx_rac_data          (owt_rx_rac_data                    ),
-    .o_owt_rx_rac_crc           (owt_rx_rac_crc                     )
-    .o_owt_rx_status            (owt_rx_rac_status                  ),
+    .o_owt_rx_rac_crc           (owt_rx_rac_crc                     ),
+    .o_owt_rx_rac_status        (owt_rx_rac_status                  ),
 
     .o_owt_rx_rst_wdg_owt       (owt_rx_rst_wdg_owt                 ),
                          
@@ -315,8 +302,8 @@ hv_reg_access_ctrl U_HV_REG_ACCESS_CTRL(
     .o_rac_owt_tx_addr          (rac_owt_tx_addr                    ),
     .o_rac_owt_tx_data          (rac_owt_tx_data                    ),
 
-    .i_adc1_data                (adc1_data                          ),
-    .i_adc2_data                (adc2_data                          ),
+    .i_adc1_data                (adc_data1                          ),
+    .i_adc2_data                (adc_data2                          ),
 
     .o_rac_reg_ren              (rac_reg_ren                        ),
     .o_rac_reg_wen              (rac_reg_wen                        ),
@@ -333,17 +320,17 @@ hv_reg_access_ctrl U_HV_REG_ACCESS_CTRL(
     .i_rst_n                    (i_rst_n                            )
 );
     
-lv_owt_tx_ctrl U_LV_OWT_TX_CTRL(
+hv_owt_tx_ctrl U_HV_OWT_TX_CTRL(
     .i_rac_owt_tx_wr_cmd_vld    (rac_owt_tx_wr_cmd_vld              ),
     .i_rac_owt_tx_rd_cmd_vld    (rac_owt_tx_rd_cmd_vld              ),
     .i_rac_owt_tx_addr          (rac_owt_tx_addr                    ),
     .i_rac_owt_tx_data          (rac_owt_tx_data                    ),
-    .o_lv_hv_owt_tx             (o_hv_lv_owt_tx                     ),
+    .o_hv_lv_owt_tx             (o_hv_lv_owt_tx                     ),
     .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
    
-lv_wdg_ctrl U_LV_WDG_CTRL(
+hv_wdg_ctrl U_HV_WDG_CTRL(
     .i_wdg_scan_en              (wdg_scan_en                        ),
     .o_wdg_scan_rac_rd_req      (wdg_scan_rac_rd_req                ), //wdg_scan to rac, rac = reg_access_ctrl
     .o_wdg_scan_rac_addr        (wdg_scan_rac_addr                  ),
@@ -487,7 +474,7 @@ hv_ctrl_unit U_HV_CTRL_UNIT(
     .i_reg_efuse_vld            (o_reg_iso_reserved_reg.efuse_vld   ),
     .i_reg_efuse_done           (reg_mode.efuse_done                ),//soft lanch, make test_st -> wait_st
     .i_io_fsiso                 (i_io_fsiso                         ),
-    .i_fsiso_en                 (reg_mode.fsifo_en                  ),
+    .i_fsiso_en                 (reg_mode.fsiso_en                  ),
     .i_reg_spi_err              (reg_status1[0]                     ),
     .i_reg_scan_crc_err         (reg_status1[1]                     ),    
     .i_reg_owt_com_err          (reg_status1[2]                     ),
@@ -512,6 +499,7 @@ hv_ctrl_unit U_HV_CTRL_UNIT(
     .o_cfg_st_reg_en            (cfg_st_reg_en                      ),//when in cfg_st support reg read & write.
     .o_test_st_reg_en           (test_st_reg_en                     ),//when in test_st support reg read & write.
     .o_spi_ctrl_reg_en          (spi_ctrl_reg_en                    ),//when spi enable support reg read & write.
+    .o_efuse_ctrl_reg_en        (efuse_ctrl_reg_en                  ),
     .o_bist_en                  (bist_en                            ),
     .o_fsm_ang_test_en          (o_fsm_ang_test_en                  ),//ctrl analog mdl into test mode.
     .o_aout_wait                (                                   ),
@@ -527,7 +515,7 @@ hv_ctrl_unit U_HV_CTRL_UNIT(
     .i_clk                      (i_clk                              ),
     .i_rst_n                    (i_rst_n                            )
 );
-   
+
 hv_pwm_intb_encode U_HV_PWM_INTB_ENCODE(
     .i_hv_intb_n                (intb_n                             ),
     .i_hv_pwm_gwave             (                                   ),
@@ -557,8 +545,8 @@ hv_abist U_HV_ABIST(
     .i_hv_scp_flt               (i_hv_scp_flt                       ),
 
     .o_bist_hv_adc              (o_bist_hv_adc                      ),
-    .i_hv_adc_data1             (adc1_data                          ),
-    .i_hv_adc_data2             (adc2_data                          ),
+    .i_hv_adc_data1             (adc_data1                          ),
+    .i_hv_adc_data2             (adc_data2                          ),
 
     .o_bist_hv_ov_status        (                                   ),//1: bist success; 0: bist failure.
     .o_bist_hv_ot_status        (                                   ),//1: bist success; 0: bist failure.
@@ -609,17 +597,3 @@ hv_adc_sample U_HV_ADC_SAMPLE(
 //    
 // synopsys translate_on    
 endmodule
-    
-
-    
-
-
-    
-
-    
-
-    
-
-    
-
-    
