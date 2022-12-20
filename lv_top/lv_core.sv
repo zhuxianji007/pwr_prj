@@ -484,8 +484,8 @@ lv_ctrl_unit U_LV_CTRL_UNIT(
     .i_reg_bist_en              (reg_mode.bist_en                   ),
     .i_reg_rst_en               (reg_mode.reset_en                  ),
 
-    .o_pwm_en                   (fsm_dgt_pwm_en                     ),
-    .o_fsc_en                   (fsm_dgt_fsc_en                     ),
+    .o_pwm_en                   (o_dgt_ang_pwm_en                   ),
+    .o_fsc_en                   (o_dgt_ang_fsc_en                   ),
     .o_wdg_scan_en              (wdg_scan_en                        ),
     .o_spi_en                   (fsm_spi_slv_en                     ),
     .o_owt_com_en               (wdg_owt_en                         ),
@@ -544,17 +544,6 @@ lv_lbist U_LV_LBIST(
     .i_rst_n                    (i_rst_n                            )
 );
 
-lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
-    .i_ang_dgt_pwm_wv           (1'b0                               ), //analog pwm ctrl to digtial pwm ctrl pwm wave
-    .i_ang_dgt_pwm_fs           (1'b0                               ),
-    .i_fsm_dgt_pwm_en           (fsm_dgt_pwm_en                     ),
-    .i_fsm_dgt_fsc_en           (fsm_dgt_fsc_en                     ),
-    .o_dgt_ang_pwm_en           (o_dgt_ang_pwm_en                   ),
-    .o_dgt_ang_fsc_en           (o_dgt_ang_fsc_en                   ),
-    .o_io_pwm_l2h               (                                   ),
-    .i_clk                      (i_clk                              ),
-    .i_rst_n                    (i_rst_n                            )
-);
 // synopsys translate_off    
 //==================================
 //assertion
@@ -562,6 +551,21 @@ lv_dgt_pwm_ctrl U_LV_DGT_PWM_CTRL(
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
