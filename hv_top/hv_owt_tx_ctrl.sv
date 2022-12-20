@@ -19,7 +19,7 @@ module hv_owt_tx_ctrl #(
 
     output logic                            o_hv_lv_owt_tx          ,
     
-    input  logic                            i_clk	                ,
+    input  logic                            i_clk                   ,
     input  logic                            i_rst_n
 );
 //==================================
@@ -329,6 +329,14 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
 
 
 
