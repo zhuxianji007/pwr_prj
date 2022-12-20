@@ -9,7 +9,7 @@
 //1.0           2022/11/6     xxxx            Create
 //=============================================================
 module hv_adc_sample #(
-    include "hv_param.svh"
+    `include "hv_param.svh"
     parameter END_OF_LIST = 1
 )( 
     input  logic 		       i_ang_dgt_adc1_rdy   , //analog to digtial
@@ -142,8 +142,8 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         o_adc2_equ_data <= ADC_DW'(0);
     end
     else begin
-        o_adc1_equ_data <= adc1_equ_data_vld ? adc1_equ_data[TMP_DW -: ADC_DW] : o_adc1_equ_data;
-        o_adc1_equ_data <= adc2_equ_data_vld ? adc2_equ_data[TMP_DW -: ADC_DW] : o_adc2_equ_data;
+        o_adc1_equ_data <= adc1_equ_data_vld ? adc1_equ_data[TMP_DW-1 -: ADC_DW] : o_adc1_equ_data;
+        o_adc1_equ_data <= adc2_equ_data_vld ? adc2_equ_data[TMP_DW-1 -: ADC_DW] : o_adc2_equ_data;
     end
 end
 // synopsys translate_off    
@@ -153,3 +153,4 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
