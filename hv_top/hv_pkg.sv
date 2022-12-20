@@ -163,7 +163,7 @@ package hv_pkg;
 
     typedef struct packed{ 
         logic                   rsv                   ;
-        logic                   48m_test_en           ;
+        logic                   test_en_48m           ;
         logic                   digtest_en            ;
         logic [4:       0]      test_mux              ;                                        
     } str_reg_test_mux;
@@ -175,6 +175,10 @@ package hv_pkg;
 endpackage
 
 `endif //HV_PKG_SV
+
+
+
+
 
 
 
