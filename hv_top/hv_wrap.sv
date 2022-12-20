@@ -56,47 +56,53 @@ module hv_wrap  import com_pkg::*; import hv_pkg::*;
    input  logic                                        vge_vce_i                        ,
    output logic                                        rtmon                            ,
 
+   output logic                                        vh_pins16                        ,
+   output logic                                        re_111                           ,
+   output logic                                        re_011                           ,
+   input  logic [2:     0]                             adc_dvmr                         ,
+   output logic                                        dvm_rst                          ,
 
-    output str_reg_iso_bgr_trim                         iso_bgr_trim                ,
-    output str_reg_iso_con_ibias_trim                   iso_con_ibias_trim          ,
-    output str_reg_iso_osc48m_trim                      iso_osc48m_trim             ,
-    output str_reg_iso_oscb_freq_adj                    iso_oscb_freq_adj           ,
-    output str_reg_iso_reserved_reg                     iso_reserved_reg            ,
-    output str_reg_iso_amp_ibias                        iso_amp_ibias               ,
-    output str_reg_iso_demo_trim                        iso_demo_trim               ,
-    output str_reg_iso_test_sw                          iso_test_sw                 ,
-    output str_reg_iso_osc_jit                          iso_osc_jit                 ,
-    output logic [7:      0]                            ana_reserved_reg            ,
-    output logic [7:      0]                            ana_reserved_reg2           ,
-    output str_reg_config1_dr_src_snk_both              config1                     ,
-    output str_reg_config2_dr_src_sel                   config2                     ,
-    output str_reg_config3_dri_snk_sel                  config3                     ,
-    output str_reg_config4_tltoff_sel1                  config4                     ,
-    output str_reg_config5_tltoff_sel2                  config5                     ,
-    output str_reg_config6_desat_sel1                   config6                     ,
-    output str_reg_config7_desat_sel2                   config7                     ,
-    output str_reg_config8_oc_sel                       config8                     ,
-    output str_reg_config9_sc_sel                       config9                     ,
-    output str_reg_config10_dvdt_ref_src                config10                    ,
-    output str_reg_config11_dvdt_ref_sink               config11                    ,
-    output str_reg_config12_adc_en                      config12                    ,
-    output str_reg_bgr_code_drv                         bgr_code_drv                ,
-    output str_reg_cap_trim_code                        cap_trim_code               ,     
-    output str_reg_csdel_cmp                            csdel_cmp                   , 
-    output str_reg_dvdt_value_adj                       dvdt_value_adj              , 
-    output str_reg_adc_adj1                             adc_adj1                    , 
-    output str_reg_adc_adj2                             adc_adj2                    , 
-    output str_reg_ibias_code_drv                       ibias_code_drv              ,
-    output str_reg_dvdt_tm                              dvdt_tm                     ,  
-    output str_reg_dvdt_win_value_en                    dvdt_win_value_en           , 
-    output str_reg_preset_delay                         preset_delay                , 
-    output str_reg_drive_delay_set                      drive_delay_set             ,
-    output str_reg_cmp_del                              cmp_del                     ,
-    output str_reg_test_mux                             test_mux                    , 
-    output str_reg_cmp_adj_vreg                         cmp_adj_vreg                ,
 
-    input  logic                                        clk                         ,
-    input  logic                                        rst_n
+   output str_reg_iso_bgr_trim                         iso_bgr_trim                     ,
+   output str_reg_iso_con_ibias_trim                   iso_con_ibias_trim               ,
+   output str_reg_iso_osc48m_trim                      iso_osc48m_trim                  ,
+   output str_reg_iso_oscb_freq_adj                    iso_oscb_freq_adj                ,
+   output str_reg_iso_reserved_reg                     iso_reserved_reg                 ,
+   output str_reg_iso_amp_ibias                        iso_amp_ibias                    ,
+   output str_reg_iso_demo_trim                        iso_demo_trim                    ,
+   output str_reg_iso_test_sw                          iso_test_sw                      ,
+   output str_reg_iso_osc_jit                          iso_osc_jit                      ,
+   output logic [7:      0]                            ana_reserved_reg                 ,
+   output logic [7:      0]                            ana_reserved_reg2                ,
+   output str_reg_config1_dr_src_snk_both              config1                          ,
+   output str_reg_config2_dr_src_sel                   config2                          ,
+   output str_reg_config3_dri_snk_sel                  config3                          ,
+   output str_reg_config4_tltoff_sel1                  config4                          ,
+   output str_reg_config5_tltoff_sel2                  config5                          ,
+   output str_reg_config6_desat_sel1                   config6                          ,
+   output str_reg_config7_desat_sel2                   config7                          ,
+   output str_reg_config8_oc_sel                       config8                          ,
+   output str_reg_config9_sc_sel                       config9                          ,
+   output str_reg_config10_dvdt_ref_src                config10                         ,
+   output str_reg_config11_dvdt_ref_sink               config11                         ,
+   output str_reg_config12_adc_en                      config12                         ,
+   output str_reg_bgr_code_drv                         bgr_code_drv                     ,
+   output str_reg_cap_trim_code                        cap_trim_code                    ,     
+   output str_reg_csdel_cmp                            csdel_cmp                        , 
+   output str_reg_dvdt_value_adj                       dvdt_value_adj                   , 
+   output str_reg_adc_adj1                             adc_adj1                         , 
+   output str_reg_adc_adj2                             adc_adj2                         , 
+   output str_reg_ibias_code_drv                       ibias_code_drv                   ,
+   output str_reg_dvdt_tm                              dvdt_tm                          ,  
+   output str_reg_dvdt_win_value_en                    dvdt_win_value_en                , 
+   output str_reg_preset_delay                         preset_delay                     , 
+   output str_reg_drive_delay_set                      drive_delay_set                  ,
+   output str_reg_cmp_del                              cmp_del                          ,
+   output str_reg_test_mux                             test_mux                         , 
+   output str_reg_cmp_adj_vreg                         cmp_adj_vreg                     ,
+
+   input  logic                                        clk                              ,
+   input  logic                                        rst_n
 );
 //==================================
 //local param delcaration
@@ -155,8 +161,8 @@ hv_core U_HV_CORE(
     .i_ang_dgt_pwm_wv                (1'b0              ), //analog pwm ctrl to digtial pwm ctrl pwm wave
     .i_ang_dgt_pwm_fs                (1'b0              ),
 
-    .o_dgt_ang_pwm_en                (                  ),
-    .o_dgt_ang_fsc_en                (                  ),
+    .o_dgt_ang_pwm_en                (pwm_en            ),
+    .o_dgt_ang_fsiso_en              (fsiso_en          ),
 
     .o_pwmn_intb                     (pwmn_intb         ),
 
@@ -208,6 +214,16 @@ hv_core U_HV_CORE(
 //    
 // synopsys translate_on    
 endmodule
+    
+    
+    
+    
+
+    
+    
+    
+    
+
     
     
     
