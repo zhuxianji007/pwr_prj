@@ -48,8 +48,8 @@ module hv_abist #(
 //==================================
 //local param delcaration
 //==================================
-localparam ADC_DATA_DN_TH       = 0x1F8                        ;
-localparam ADC_DATA_UP_TH       = 0x207                        ;
+localparam ADC_DATA_DN_TH       = 10'h1F8                      ;
+localparam ADC_DATA_UP_TH       = 10'h207                      ;
 localparam BIST_70US_CYC_NUM    = 70*CLK_M                     ;
 localparam BIST_1US_CYC_NUM     = 1*CLK_M                      ;
 localparam BIST_4US_CYC_NUM     = 4*CLK_M                      ;
