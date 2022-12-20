@@ -175,6 +175,7 @@ logic [REG_DW-1:    0] rdata_ibias_code_drv             ;
 logic [REG_DW-1:    0] rdata_dvdt_tm                    ;
 logic [REG_DW-1:    0] rdata_cnt_del_read               ;
 logic [REG_DW-1:    0] rdata_dvdt_win_value_en          ;
+logic [REG_DW-1:    0] rdata_preset_delay               ;
 logic [REG_DW-1:    0] rdata_drive_delay_set            ;
 logic [REG_DW-1:    0] rdata_cmp_del                    ;
 logic [REG_DW-1:    0] rdata_test_mux                   ;
@@ -214,11 +215,14 @@ logic [REG_DW-1:    0] reg_csdel_cmp                    ;
 logic [REG_DW-1:    0] reg_dvdt_value_adj               ;
 logic [REG_DW-1:    0] reg_adc_adj1                     ;
 logic [REG_DW-1:    0] reg_adc_adj2                     ;
+logic [REG_DW-1:    0] reg_ibias_code_drv               ;
 logic [REG_DW-1:    0] reg_dvdt_tm                      ;
 logic [REG_DW-1:    0] reg_dvdt_win_value_en            ;
+logic [REG_DW-1:    0] reg_preset_delay                 ;
 logic [REG_DW-1:    0] reg_drive_delay_set              ;
 logic [REG_DW-1:    0] reg_cmp_del                      ;
 logic [REG_DW-1:    0] reg_test_mux                     ;
+logic [REG_DW-1:    0] reg_cmp_adj_vreg                 ;
 
 //==================================
 //var delcaration
@@ -235,6 +239,7 @@ com_reg_bank U_LV_COM_REG_BANK(
     .i_spi_reg_wen                 (spi_reg_wen             ),
     .i_spi_reg_addr                (spi_reg_addr            ),
     .i_spi_reg_wdata               (spi_reg_wdata           ),
+    .i_spi_reg_wcrc                (spi_reg_wcrc            ),
 
     .o_reg_spi_wack                (com_reg_wack            ),
     .o_reg_spi_rack                (com_reg_rack            ),
@@ -410,7 +415,6 @@ ro_reg #(
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h40      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -441,7 +445,6 @@ rww_reg #(
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h41      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -472,7 +475,6 @@ rww_reg #(
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h42      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -503,7 +505,6 @@ rww_reg #(
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h43      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -530,13 +531,12 @@ rww_reg #(
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_reg_iso_bgr_trim = reg_bgr_trim;
+assign o_reg_iso_bgr_trim = reg_iso_bgr_trim;
 
 //ISO_CON_IBIAS_TRM REGISTER
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h10      ),
     .REG_ADDR               (7'h44      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -569,7 +569,6 @@ assign o_reg_iso_con_ibias_trim = reg_iso_con_ibias_trim;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h20      ),
     .REG_ADDR               (7'h45      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -602,7 +601,6 @@ assign o_reg_iso_osc48m_trim = reg_iso_osc48m_trim;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'hDF      ),
     .REG_ADDR               (7'h46      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -621,21 +619,20 @@ rww_reg #(
     .i_efuse_ctrl_reg_en  (i_efuse_ctrl_reg_en                          ),
     .i_addr               (spi_reg_addr                                 ),
     .i_wdata              (i_spi_reg_wdata                              ),
-    .o_rdata              (rdata_iso_freq_adj                           ),
-    .o_reg_data           (reg_iso_freq_adj                             ),
+    .o_rdata              (rdata_iso_oscb_freq_adj                      ),
+    .o_reg_data           (reg_iso_oscb_freq_adj                        ),
     .i_lgc_wen            (i_efuse_reg_update                           ),
     .i_lgc_wdata          (i_efuse_reg_data[6]                          ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
 );
 
-assign o_reg_iso_freq_adj = reg_iso_freq_adj;
+assign o_reg_iso_oscb_freq_adj = reg_iso_oscb_freq_adj;
 
 //ISO_RESERVED_REG REGISTER
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h47      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -833,7 +830,6 @@ assign o_reg_ana_reserved_reg = reg_ana_reserved_reg;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h4D      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1262,7 +1258,6 @@ assign o_reg_config12_adc_en = reg_config12_adc_en;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h00      ),
     .REG_ADDR               (7'h60      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1295,7 +1290,6 @@ assign o_reg_bgr_code_drv = reg_bgr_code_drv;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h88      ),
     .REG_ADDR               (7'h61      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1328,7 +1322,6 @@ assign o_reg_cap_trim_code = reg_cap_trim_code;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h70      ),
     .REG_ADDR               (7'h62      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1361,7 +1354,6 @@ assign o_reg_csdel_cmp = reg_csdel_cmp;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h88      ),
     .REG_ADDR               (7'h63      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1394,7 +1386,6 @@ assign o_reg_dvdt_value_adj = reg_dvdt_value_adj;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h88      ),
     .REG_ADDR               (7'h64      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1427,7 +1418,6 @@ assign o_reg_adc_adj1 = reg_adc_adj1;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h08      ),
     .REG_ADDR               (7'h65      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1460,7 +1450,6 @@ assign o_reg_adc_adj2 = reg_adc_adj2;
 rww_reg #(
     .DW                     (REG_DW     ),
     .AW                     (REG_AW     ),
-    .CRC_W                  (REG_CRC_W  ),
     .DEFAULT_VAL            (8'h10      ),
     .REG_ADDR               (7'h66      ),
     .SUPPORT_TEST_MODE_WR   (1'b1       ),
@@ -1536,7 +1525,7 @@ ro_reg #(
     .i_cfg_st_reg_en      (i_cfg_st_reg_en                              ),
     .i_spi_ctrl_reg_en    (i_spi_ctrl_reg_en                            ),    
     .i_addr               (spi_reg_addr                                 ),
-    .i_ff_data            ({3'b0, i_cnt_del_read}                       ),
+    .i_ff_data            ({2'b0, i_cnt_del_read}                       ),
     .o_rdata              (rdata_cnt_del_read                           ),
     .i_clk                (i_clk                                        ),
     .i_rst_n              (rst_n                                        )
@@ -1802,6 +1791,14 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
 
 
 
