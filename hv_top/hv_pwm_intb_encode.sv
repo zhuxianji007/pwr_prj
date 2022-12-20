@@ -70,7 +70,7 @@ always_comb begin
             if(hv_intb1_pulse | wdg_intb1_update) begin
                 hv_pwm_intb_nxt_st = PWM_INTB_FSM_INTB1_0_ST;
             end
-            else if(hv_intb0_pulse | wdg_intb0_update) : begin
+            else if(hv_intb0_pulse | wdg_intb0_update) begin
                 hv_pwm_intb_nxt_st = PWM_INTB_FSM_INTB0_ST;            
             end
             else;
@@ -184,3 +184,4 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
