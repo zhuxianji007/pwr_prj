@@ -97,9 +97,9 @@ assign lvhv_err2 = i_reg_lv_pwm_dterr | i_reg_hv_oc_err;
 
 assign effect_pwm_err = lvhv_err1 | i_reg_owt_com_err | i_reg_wdg_tmo_err;
 
-assign fault_st_pwm_en = (lv_ctrl_cur_st==FAULT_ST) & ~effect_pwm_err;
+assign fault_st_pwm_en = (lv_ctrl_nxt_st==FAULT_ST) & ~effect_pwm_err;
 
-assign cfg_st_intb_n_en = (lv_ctrl_cur_st==CFG_ST) & (i_reg_owt_com_err | i_reg_wdg_tmo_err | 
+assign cfg_st_intb_n_en = (lv_ctrl_nxt_st==CFG_ST) & (i_reg_owt_com_err | i_reg_wdg_tmo_err | 
                            i_reg_spi_err | i_reg_scan_crc_err | lvhv_err0);                         
 
 always_ff@(posedge i_clk or negedge i_rst_n) begin
@@ -265,8 +265,11 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
         o_pwm_en <= 1'b0;
     end
-    else if((lv_ctrl_nxt_st==NML_ST) || fault_st_pwm_en) begin
+    else if(lv_ctrl_nxt_st==NML_ST) begin
         o_pwm_en <= 1'b1;
+    end
+    else if(fault_st_pwm_en) begin
+        o_pwm_en <= o_pwm_en;
     end
     else begin
         o_pwm_en <= 1'b0;
@@ -279,6 +282,9 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
     end
     else if(lv_ctrl_nxt_st==FAILSAFE_ST) begin
         o_fsc_en <= 1'b1;
+    end
+    else if(fault_st_pwm_en) begin
+        o_fsc_en <= o_fsc_en;
     end
     else begin
         o_fsc_en <= 1'b0;
@@ -430,3 +436,4 @@ end
 `endif
 // synopsys translate_on    
 endmodule
+
