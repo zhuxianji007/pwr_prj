@@ -41,7 +41,7 @@ module hv_wdg_ctrl #(
 localparam integer unsigned SCAN_REG_ADDR[HV_SCAN_REG_NUM-1: 0]  = {       7'h5B, 7'h5A, 7'h59, 7'h58, 7'h57,
                                                                     7'h56, 7'h55, 7'h54, 7'h53, 7'h52, 7'h51, 
                                                                     7'h50, 7'h0B, 7'h09, 7'h03, 7'h02, 7'h01} ;
-localparam SCAN_PTR_W                                            = $clog2(LV_SCAN_REG_NUM) ;
+localparam SCAN_PTR_W                                            = $clog2(HV_SCAN_REG_NUM) ;
 //==================================
 //var delcaration
 //==================================
@@ -94,7 +94,7 @@ always_ff@(posedge i_clk or negedge i_rst_n) begin
         wdg_scan_ptr <= SCAN_PTR_W'(0);
     end
     else if((wdg_scanreg_cnt==(WDG_SCANREG_TH[i_wdgcrc_config]-1)) | bist_lanch_scan_reg) begin
-        wdg_scan_ptr <= (wdg_scan_ptr==(LV_SCAN_REG_NUM-1)) ? SCAN_PTR_W'(0) : (wdg_scan_ptr+1'b1);
+        wdg_scan_ptr <= (wdg_scan_ptr==(HV_SCAN_REG_NUM-1)) ? SCAN_PTR_W'(0) : (wdg_scan_ptr+1'b1);
     end
     else;
 end
@@ -194,6 +194,16 @@ end
 //    
 // synopsys translate_on    
 endmodule
+
+
+
+
+
+
+
+
+
+
 
 
 
