@@ -66,8 +66,8 @@ module hv_wrap  import com_pkg::*; import hv_pkg::*;
     output str_reg_iso_demo_trim                        iso_demo_trim               ,
     output str_reg_iso_test_sw                          iso_test_sw                 ,
     output str_reg_iso_osc_jit                          iso_osc_jit                 ,
-    output logic [REG_DW-1:      0]                     ana_reserved_reg            ,
-    output logic [REG_DW-1:      0]                     ana_reserved_reg2           ,
+    output logic [7:      0]                            ana_reserved_reg            ,
+    output logic [7:      0]                            ana_reserved_reg2           ,
     output str_reg_config1_dr_src_snk_both              config1                     ,
     output str_reg_config2_dr_src_sel                   config2                     ,
     output str_reg_config3_dri_snk_sel                  config3                     ,
@@ -92,8 +92,8 @@ module hv_wrap  import com_pkg::*; import hv_pkg::*;
     output str_reg_preset_delay                         preset_delay                , 
     output str_reg_drive_delay_set                      drive_delay_set             ,
     output str_reg_cmp_del                              cmp_del                     ,
-    output str_reg_test_mux                             reg_test_mux                , 
-    output str_reg_cmp_adj_vreg                         reg_cmp_adj_vreg            ,
+    output str_reg_test_mux                             test_mux                    , 
+    output str_reg_cmp_adj_vreg                         cmp_adj_vreg                ,
 
     input  logic                                        clk                         ,
     input  logic                                        rst_n
@@ -208,6 +208,11 @@ hv_core U_HV_CORE(
 //    
 // synopsys translate_on    
 endmodule
+    
+    
+    
+    
+
     
     
     
